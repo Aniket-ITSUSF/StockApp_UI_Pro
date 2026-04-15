@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
 import ShadowLab from './pages/ShadowLab';
 import Settings from './pages/Settings';
+import { BackendProvider } from './context/BackendContext';
 import './App.css';
 
 class ErrorBoundary extends Component {
@@ -44,14 +45,16 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#020617', color: '#e2e8f0' }}>
-        <Sidebar currentPage={page} onNavigate={setPage} />
-        <main style={{ flex: 1, overflowY: 'auto' }}>
-          <ErrorBoundary>
-            <Page />
-          </ErrorBoundary>
-        </main>
-      </div>
+      <BackendProvider>
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#020617', color: '#e2e8f0' }}>
+          <Sidebar currentPage={page} onNavigate={setPage} />
+          <main style={{ flex: 1, overflowY: 'auto' }}>
+            <ErrorBoundary>
+              <Page />
+            </ErrorBoundary>
+          </main>
+        </div>
+      </BackendProvider>
     </ErrorBoundary>
   );
 }

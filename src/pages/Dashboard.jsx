@@ -4,9 +4,12 @@ import StatsOverview from '../components/StatsOverview';
 import PerformanceChart from '../components/PerformanceChart';
 import EvaluationCard from '../components/EvaluationCard';
 import TickerEvaluator from '../components/TickerEvaluator';
-import { getPortfolioSummary, getRecentEvaluations } from '../services/api';
+import { getPortfolioSummary, getRecentEvaluations, BACKEND_ORIGIN } from '../services/api';
+import { useBackend } from '../context/BackendContext';
 
 export default function Dashboard() {
+  const { status: backendStatus, retry: retryConnection } = useBackend();
+
   const [portfolio,    setPortfolio]    = useState(null);
   const [evaluations,  setEvaluations]  = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -27,7 +30,7 @@ export default function Dashboard() {
     } catch (err) {
       setError(
         err.response?.data?.detail ??
-        'Cannot reach backend. Is the server running on port 8000?'
+        `Cannot reach backend at ${BACKEND_ORIGIN} — check that the server is running and CORS is configured.`
       );
     } finally {
       setLoading(false);
@@ -89,8 +92,27 @@ export default function Dashboard() {
 
       {/* ── Error banner ──────────────────────────────────── */}
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-sm text-rose-400">
-          ⚠ {error}
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1 min-w-0">
+            <span className="text-sm text-rose-400">⚠ {error}</span>
+            {backendStatus === 'connected' && (
+              <span className="text-xs text-slate-500">
+                Health check passed — this may be a CORS or database issue. Check Railway logs.
+              </span>
+            )}
+            {backendStatus === 'disconnected' && (
+              <span className="text-xs text-slate-500">
+                Backend health check failed. Use the Retry button in the sidebar.
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => { retryConnection(); fetchAll(); }}
+            className="shrink-0 flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            <RefreshCw size={11} />
+            Retry
+          </button>
         </div>
       )}
 

@@ -1,4 +1,5 @@
-import { Settings as SettingsIcon, Info } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { useBackend } from '../context/BackendContext';
 
 const BACKEND_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
 
@@ -11,6 +12,15 @@ const CONFIG_ROWS = [
 ];
 
 export default function Settings() {
+  const { status, lastChecked, retry } = useBackend();
+
+  const statusMeta = {
+    checking:     { Icon: RefreshCw, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Checking…' },
+    connected:    { Icon: Wifi,      color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', label: 'Connected' },
+    disconnected: { Icon: WifiOff,   color: 'text-rose-400',   bg: 'bg-rose-500/10 border-rose-500/20',   label: 'Unreachable' },
+  }[status];
+  const { Icon: StatusIcon } = statusMeta;
+
   return (
     <div className="p-6 flex flex-col gap-6">
       <div className="flex items-center gap-2">
@@ -25,6 +35,32 @@ export default function Settings() {
         <Info size={13} className="shrink-0 mt-0.5" />
         This application operates in <strong>&nbsp;Paper Trading Mode&nbsp;</strong> only.
         No real capital is ever at risk.
+      </div>
+
+      {/* Backend connection status */}
+      <div className={`border rounded-xl px-4 py-3 flex items-center justify-between gap-4 ${statusMeta.bg}`}>
+        <div className="flex items-center gap-2.5">
+          <StatusIcon size={14} className={`shrink-0 ${statusMeta.color} ${status === 'checking' ? 'animate-spin' : ''}`} />
+          <div>
+            <p className={`text-sm font-semibold ${statusMeta.color}`}>
+              Backend {statusMeta.label}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">{BACKEND_URL}</p>
+            {lastChecked && (
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Last checked {lastChecked.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={retry}
+          disabled={status === 'checking'}
+          className="shrink-0 flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-40"
+        >
+          <RefreshCw size={11} className={status === 'checking' ? 'animate-spin' : ''} />
+          {status === 'checking' ? 'Checking…' : 'Test Connection'}
+        </button>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">

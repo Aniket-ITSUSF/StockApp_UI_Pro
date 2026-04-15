@@ -1,4 +1,5 @@
-import { BarChart2, Briefcase, FlaskConical, Settings } from 'lucide-react';
+import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { useBackend } from '../context/BackendContext';
 
 const NAV = [
   { id: 'dashboard',  label: 'Dashboard',      icon: BarChart2 },
@@ -6,6 +7,72 @@ const NAV = [
   { id: 'shadow-lab', label: 'Shadow Lab',      icon: FlaskConical },
   { id: 'settings',   label: 'Settings',        icon: Settings },
 ];
+
+function StatusFooter() {
+  const { status, lastChecked, retry, url } = useBackend();
+
+  // Shorten the URL for display: strip protocol + trailing slash
+  const displayUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+  const states = {
+    checking: {
+      dot:   'bg-amber-400',
+      label: 'Checking…',
+      text:  'text-amber-400',
+    },
+    connected: {
+      dot:   'bg-emerald-400 animate-pulse',
+      label: 'Connected',
+      text:  'text-emerald-400',
+    },
+    disconnected: {
+      dot:   'bg-rose-500',
+      label: 'Unreachable',
+      text:  'text-rose-400',
+    },
+  };
+
+  const s = states[status];
+
+  return (
+    <div className="p-3 border-t border-slate-800 flex flex-col gap-2">
+
+      {/* Status row */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50">
+        {status === 'checking'
+          ? <RefreshCw size={11} className="text-amber-400 animate-spin shrink-0" />
+          : <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
+        }
+        <div className="flex flex-col min-w-0">
+          <span className={`text-[11px] font-semibold leading-none ${s.text}`}>
+            {s.label}
+          </span>
+          <span className="text-[10px] text-slate-600 truncate mt-0.5" title={url}>
+            {displayUrl}
+          </span>
+        </div>
+      </div>
+
+      {/* Connect button — only shown when disconnected */}
+      {status === 'disconnected' && (
+        <button
+          onClick={retry}
+          className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-[11px] font-semibold transition-colors"
+        >
+          <WifiOff size={11} />
+          Retry Connection
+        </button>
+      )}
+
+      {/* Last checked timestamp */}
+      {lastChecked && status !== 'checking' && (
+        <p className="text-[10px] text-slate-700 text-center">
+          Checked {lastChecked.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function Sidebar({ currentPage, onNavigate }) {
   return (
@@ -27,7 +94,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
       {/* Nav links */}
       <nav className="flex-1 p-2.5 flex flex-col gap-0.5">
         {NAV.map((item) => {
-          const active = currentPage === item.id;
+          const active  = currentPage === item.id;
           const NavIcon = item.icon;
           return (
             <button
@@ -46,13 +113,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
         })}
       </nav>
 
-      {/* Status footer */}
-      <div className="p-3 border-t border-slate-800">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <span className="text-[11px] text-slate-500">Backend live · :8000</span>
-        </div>
-      </div>
+      <StatusFooter />
     </aside>
   );
 }
