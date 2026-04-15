@@ -1,7 +1,9 @@
 import { Settings as SettingsIcon, Info } from 'lucide-react';
 
+const BACKEND_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
+
 const CONFIG_ROWS = [
-  { label: 'Backend URL',          value: 'http://localhost:8000/api' },
+  { label: 'Backend URL',          value: BACKEND_URL },
   { label: 'Consensus Threshold',  value: '65%' },
   { label: 'Trading Mode',         value: 'Paper Trading Only' },
   { label: 'Auto-refresh interval',value: '60 seconds' },
