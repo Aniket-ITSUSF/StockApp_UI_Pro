@@ -21,6 +21,9 @@ export const evaluateTicker      = (ticker)  => api.post(`/evaluate/${ticker.toU
 export const getRecentEvaluations = ()       => api.get('/evaluations/recent');
 export const getCurrentPrice     = (ticker)  => api.get(`/price/${ticker.toUpperCase().trim()}`);
 export const getBatchPrices      = (tickers) => api.post('/prices/batch', { tickers });
-export const getShadowPositions  = ()        => api.get('/shadow/positions');
+export const getShadowPositions    = ()                    => api.get('/shadow/positions');
+export const getRecentDiscoveries  = ()                    => api.get('/discoveries/recent');
+export const getEvaluationsPaged   = (page = 1, limit = 20) => api.get('/evaluations', { params: { page, limit } });
+export const getDiscoveriesPaged   = (page = 1, limit = 20) => api.get('/discoveries', { params: { page, limit } });
 
 export default api;

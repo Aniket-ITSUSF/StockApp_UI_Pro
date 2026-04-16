@@ -12,9 +12,22 @@
  *   content  — string or JSX shown inside the tooltip bubble
  *   position — 'top' (default) | 'bottom'
  *   width    — tailwind width class, e.g. 'w-52' (default)
+ *   align    — 'center' (default) | 'left' | 'right'
+ *              'right' anchors the bubble to the right edge of the trigger (extends leftward)
+ *              'left'  anchors the bubble to the left edge of the trigger (extends rightward)
  */
-export default function Tooltip({ content, children, position = 'top', width = 'w-52' }) {
+export default function Tooltip({ content, children, position = 'top', width = 'w-52', align = 'center' }) {
   const isTop = position !== 'bottom';
+
+  const horizClass =
+    align === 'right'  ? 'right-0' :
+    align === 'left'   ? 'left-0'  :
+    'left-1/2 -translate-x-1/2';
+
+  const arrowClass =
+    align === 'right'  ? 'right-3' :
+    align === 'left'   ? 'left-3'  :
+    'left-1/2 -translate-x-1/2';
 
   return (
     <div className="relative group inline-flex">
@@ -23,9 +36,9 @@ export default function Tooltip({ content, children, position = 'top', width = '
       {/* Bubble */}
       <div
         className={`
-          pointer-events-none absolute z-50
+          pointer-events-none absolute z-[9999]
           ${width} ${isTop ? 'bottom-full mb-2' : 'top-full mt-2'}
-          left-1/2 -translate-x-1/2
+          ${horizClass}
           opacity-0 group-hover:opacity-100
           transition-opacity duration-150
           bg-slate-800 border border-slate-700
@@ -39,7 +52,7 @@ export default function Tooltip({ content, children, position = 'top', width = '
         {/* Arrow */}
         <span
           className={`
-            absolute left-1/2 -translate-x-1/2
+            absolute ${arrowClass}
             border-4 border-transparent
             ${isTop
               ? 'top-full border-t-slate-700'

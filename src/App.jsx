@@ -4,6 +4,8 @@ import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
 import ShadowLab from './pages/ShadowLab';
 import Settings from './pages/Settings';
+import AiRadar from './pages/AiRadar';
+import RecentIntelligence from './pages/RecentIntelligence';
 import { BackendProvider } from './context/BackendContext';
 import './App.css';
 
@@ -33,10 +35,12 @@ class ErrorBoundary extends Component {
 }
 
 const PAGES = {
-  dashboard:    Dashboard,
-  portfolio:    Portfolio,
-  'shadow-lab': ShadowLab,
-  settings:     Settings,
+  dashboard:     Dashboard,
+  portfolio:     Portfolio,
+  'shadow-lab':  ShadowLab,
+  'ai-radar':    AiRadar,
+  intelligence:  RecentIntelligence,
+  settings:      Settings,
 };
 
 export default function App() {
@@ -50,7 +54,7 @@ export default function App() {
           <Sidebar currentPage={page} onNavigate={setPage} />
           <main style={{ flex: 1, overflowY: 'auto' }}>
             <ErrorBoundary>
-              <Page />
+              <Page onNavigate={setPage} />
             </ErrorBoundary>
           </main>
         </div>

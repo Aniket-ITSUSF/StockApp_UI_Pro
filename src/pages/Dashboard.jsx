@@ -1,31 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Activity } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { RefreshCw, Activity, Radar, Brain, ArrowRight } from 'lucide-react';
 import StatsOverview from '../components/StatsOverview';
 import PerformanceChart from '../components/PerformanceChart';
 import EvaluationCard from '../components/EvaluationCard';
+import DiscoveryCard from '../components/DiscoveryCard';
 import TickerEvaluator from '../components/TickerEvaluator';
-import { getPortfolioSummary, getRecentEvaluations, BACKEND_ORIGIN } from '../services/api';
+import HorizontalCarousel from '../components/HorizontalCarousel';
+import { getPortfolioSummary, getRecentEvaluations, getRecentDiscoveries, BACKEND_ORIGIN } from '../services/api';
 import { useBackend } from '../context/BackendContext';
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const { status: backendStatus, retry: retryConnection } = useBackend();
+  const evaluatorRef = useRef(null);
 
-  const [portfolio,    setPortfolio]    = useState(null);
-  const [evaluations,  setEvaluations]  = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState(null);
-  const [lastUpdated,  setLastUpdated]  = useState(null);
+  const [portfolio,         setPortfolio]         = useState(null);
+  const [evaluations,       setEvaluations]       = useState([]);
+  const [discoveries,       setDiscoveries]       = useState([]);
+  const [loading,           setLoading]           = useState(true);
+  const [error,             setError]             = useState(null);
+  const [lastUpdated,       setLastUpdated]       = useState(null);
+  const [prefilledTicker,   setPrefilledTicker]   = useState('');
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [portRes, evalRes] = await Promise.all([
+      const [portRes, evalRes, discRes] = await Promise.all([
         getPortfolioSummary(),
         getRecentEvaluations(),
+        getRecentDiscoveries(),
       ]);
       setPortfolio(portRes.data);
       setEvaluations(evalRes.data);
+      setDiscoveries(discRes.data?.discoveries ?? []);
       setLastUpdated(new Date());
     } catch (err) {
       setError(
@@ -45,6 +52,11 @@ export default function Dashboard() {
 
   const handleNewEvaluation = (data) => {
     setEvaluations((prev) => [{ ...data, id: Date.now() }, ...prev.slice(0, 19)]);
+  };
+
+  const handleDiscoveryEvaluate = (ticker) => {
+    setPrefilledTicker(ticker);
+    evaluatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const executedCount  = evaluations.filter(e => e.action_taken === 'EXECUTED').length;
@@ -124,36 +136,86 @@ export default function Dashboard() {
         <div className="lg:col-span-3">
           <PerformanceChart evaluations={evaluations} />
         </div>
-        <div className="lg:col-span-2">
-          <TickerEvaluator onNewEvaluation={handleNewEvaluation} />
+        <div ref={evaluatorRef} className="lg:col-span-2">
+          <TickerEvaluator
+            onNewEvaluation={handleNewEvaluation}
+            prefilledTicker={prefilledTicker}
+            onPrefilledConsumed={() => setPrefilledTicker('')}
+          />
         </div>
       </div>
 
-      {/* ── Recent Intelligence feed ──────────────────────── */}
+      {/* ── AI Radar — top-10 carousel ─────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">Recent Intelligence</h2>
+            <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+              <Radar size={14} className="text-purple-400" />
+              AI Radar — Discovered Opportunities
+            </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Last {evaluations.length} evaluations logged by the committee
+              Second-order beneficiaries surfaced by the Discovery Agent
             </p>
           </div>
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('ai-radar')}
+              className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              View All <ArrowRight size={11} />
+            </button>
+          )}
         </div>
 
-        {evaluations.length === 0 && !loading ? (
-          <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-20 flex flex-col items-center justify-center gap-2">
-            <Activity size={28} className="text-slate-700" />
-            <p className="text-sm text-slate-600">
-              No evaluations yet. Enter a ticker above to begin.
+        <HorizontalCarousel
+          items={discoveries.slice(0, 10)}
+          renderItem={(disc) => (
+            <DiscoveryCard disc={disc} onEvaluate={handleDiscoveryEvaluate} />
+          )}
+          emptyNode={
+            <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-10 flex flex-col items-center justify-center gap-2">
+              <Radar size={24} className="text-slate-700" />
+              <p className="text-sm text-slate-600">No discoveries yet.</p>
+              <p className="text-xs text-slate-700">Evaluate a few tickers to surface second-order opportunities.</p>
+            </div>
+          }
+        />
+      </div>
+
+      {/* ── Recent Intelligence — top-10 carousel ─────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+              <Brain size={14} className="text-emerald-400" />
+              Recent Intelligence
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Latest committee evaluations — showing top 10
             </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {evaluations.map((ev, idx) => (
-              <EvaluationCard key={ev.id ?? idx} evaluation={ev} />
-            ))}
-          </div>
-        )}
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('intelligence')}
+              className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              View All <ArrowRight size={11} />
+            </button>
+          )}
+        </div>
+
+        <HorizontalCarousel
+          items={evaluations.slice(0, 10)}
+          renderItem={(ev, idx) => <EvaluationCard key={ev.id ?? idx} evaluation={ev} />}
+          emptyNode={
+            !loading && (
+              <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-20 flex flex-col items-center justify-center gap-2">
+                <Activity size={28} className="text-slate-700" />
+                <p className="text-sm text-slate-600">No evaluations yet. Enter a ticker above to begin.</p>
+              </div>
+            )
+          }
+        />
       </div>
     </div>
   );

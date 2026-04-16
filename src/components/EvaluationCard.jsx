@@ -1,15 +1,21 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Brain, TrendingUp, TrendingDown, Minus, ShieldX } from 'lucide-react';
 import CircularProgress from './CircularProgress';
 import AgentVoteGrid from './AgentVoteGrid';
 import Tooltip from './Tooltip';
+import SentimentModal from './SentimentModal';
 
 const ACTION_BADGE = {
-  EXECUTED:                  { text: 'EXECUTED',     cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
-  REJECTED_CONSENSUS:        { text: 'REJECTED',     cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
-  REJECTED_CONSENSUS_REGIME: { text: 'REGIME BLOCK', cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
-  REJECTED_RISK:             { text: 'RISK BLOCK',   cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
-  REJECTED_MTF:              { text: 'MTF BLOCK',    cls: 'bg-amber-500/10   text-amber-400   border-amber-500/25' },
+  // ── Legacy vote-pipeline actions ──────────────────────────────────────────
+  EXECUTED:                  { text: 'EXECUTED',        cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
+  REJECTED_CONSENSUS:        { text: 'REJECTED',        cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
+  REJECTED_CONSENSUS_REGIME: { text: 'REGIME BLOCK',   cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
+  REJECTED_RISK:             { text: 'RISK BLOCK',     cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
+  REJECTED_MTF:              { text: 'MTF BLOCK',      cls: 'bg-amber-500/10   text-amber-400   border-amber-500/25' },
+  // ── Cognitive-wing actions ────────────────────────────────────────────────
+  BUY:                       { text: 'BUY',            cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
+  HOLD:                      { text: 'BELOW THRESHOLD', cls: 'bg-amber-500/10  text-amber-400   border-amber-500/25' },
+  REJECTED_COGNITIVE:        { text: 'COGNITIVE VETO', cls: 'bg-purple-500/10  text-purple-400  border-purple-500/25' },
 };
 
 const ALPHA_TIP =
@@ -42,8 +48,16 @@ function buildReasoning(ev) {
   return parts.length ? parts.join(' · ') : 'No additional context available.';
 }
 
+const SENTIMENT_META = {
+  BULLISH:   { label: 'Bullish',   cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', Icon: TrendingUp  },
+  NEUTRAL:   { label: 'Neutral',   cls: 'text-amber-400   bg-amber-500/10   border-amber-500/25',   Icon: Minus       },
+  BEARISH:   { label: 'Bearish',   cls: 'text-rose-400    bg-rose-500/10    border-rose-500/25',    Icon: TrendingDown },
+  HARD_VETO: { label: 'Hard Veto', cls: 'text-rose-300    bg-rose-900/40    border-rose-500/40',    Icon: ShieldX     },
+};
+
 export default function EvaluationCard({ evaluation: ev }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]             = useState(false);
+  const [showSentiment, setShowSentiment] = useState(false);
   if (!ev) return null;
 
   const action = ev.action_taken ?? 'REJECTED_CONSENSUS';
@@ -79,7 +93,7 @@ export default function EvaluationCard({ evaluation: ev }) {
         </div>
 
         {/* Alpha score with tooltip */}
-        <Tooltip content={ALPHA_TIP} width="w-60">
+        <Tooltip content={ALPHA_TIP} width="w-60" align="right">
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={68} />
             <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
@@ -109,6 +123,40 @@ export default function EvaluationCard({ evaluation: ev }) {
             </Tooltip>
           )}
         </div>
+      )}
+
+      {/* Sentiment strip */}
+      {ev.cognitive_signal && (
+        <>
+          {showSentiment && (
+            <SentimentModal ev={ev} onClose={() => setShowSentiment(false)} />
+          )}
+          <button
+            onClick={() => setShowSentiment(true)}
+            className="w-full flex items-center justify-between gap-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-lg px-3 py-2 transition-colors group"
+          >
+            <div className="flex items-center gap-2">
+              <Brain size={12} className="text-purple-400 shrink-0" />
+              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sentiment</span>
+              {(() => {
+                const m = SENTIMENT_META[ev.cognitive_signal] ?? SENTIMENT_META.NEUTRAL;
+                const { Icon } = m;
+                return (
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${m.cls}`}>
+                    <Icon size={9} />
+                    {m.label}
+                  </span>
+                );
+              })()}
+              {ev.sentiment_score != null && (
+                <span className="text-[10px] font-mono text-slate-400">
+                  {ev.sentiment_score >= 0 ? '+' : ''}{ev.sentiment_score.toFixed(2)}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-slate-600 group-hover:text-slate-400 transition-colors">View analysis →</span>
+          </button>
+        </>
       )}
 
       {/* Agent voting grid */}

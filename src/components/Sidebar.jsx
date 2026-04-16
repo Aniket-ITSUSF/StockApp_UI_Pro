@@ -1,11 +1,13 @@
-import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Brain } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
 
 const NAV = [
-  { id: 'dashboard',  label: 'Dashboard',      icon: BarChart2 },
-  { id: 'portfolio',  label: 'Real Portfolio',  icon: Briefcase },
-  { id: 'shadow-lab', label: 'Shadow Lab',      icon: FlaskConical },
-  { id: 'settings',   label: 'Settings',        icon: Settings },
+  { id: 'dashboard',    label: 'Dashboard',         icon: BarChart2    },
+  { id: 'portfolio',    label: 'Real Portfolio',     icon: Briefcase    },
+  { id: 'shadow-lab',  label: 'Shadow Lab',         icon: FlaskConical },
+  { id: 'ai-radar',    label: 'AI Radar',           icon: Radar        },
+  { id: 'intelligence', label: 'Intelligence',      icon: Brain        },
+  { id: 'settings',    label: 'Settings',           icon: Settings     },
 ];
 
 function StatusFooter() {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Loader2, AlertCircle, Zap, ChevronDown } from 'lucide-react';
 import { evaluateTicker } from '../services/api';
 import EvaluationCard from './EvaluationCard';
@@ -21,12 +21,13 @@ function detectMarket() {
   return 'US';
 }
 
-export default function TickerEvaluator({ onNewEvaluation }) {
+export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPrefilledConsumed }) {
   const [market, setMarket]   = useState(detectMarket);
   const [ticker, setTicker]   = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState(null);
   const [error, setError]     = useState(null);
+  const inputRef = useRef(null);
 
   // Reset result/error when market changes
   useEffect(() => {
@@ -34,6 +35,17 @@ export default function TickerEvaluator({ onNewEvaluation }) {
     setResult(null);
     setError(null);
   }, [market]);
+
+  // Accept pre-filled ticker from Discovery Radar
+  useEffect(() => {
+    if (!prefilledTicker) return;
+    const base = prefilledTicker.replace(/\.(NS|BO)$/, '');
+    const isIndian = prefilledTicker.endsWith('.NS') || prefilledTicker.endsWith('.BO');
+    if (isIndian) setMarket('IND');
+    setTicker(base);
+    inputRef.current?.focus();
+    if (onPrefilledConsumed) onPrefilledConsumed();
+  }, [prefilledTicker]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildSym = (raw) => {
     const base = raw.trim().toUpperCase();
@@ -63,8 +75,11 @@ export default function TickerEvaluator({ onNewEvaluation }) {
         complex_pullback_vote:  d.votes?.find(v => v.agent_name === 'complex_pullback')?.vote,
         stat_arb_vote:          d.stat_arb_vote?.vote,
         failure_test_vote:      d.failure_test_vote?.vote,
-        final_alpha_score:      d.weighted_alpha_score,
-        reasoning:              d.reasoning,
+        final_alpha_score:      d.final_weighted_alpha_score ?? d.weighted_alpha_score,
+        reasoning:              d.reasoning ?? d.decision_reason,
+        // ── Cognitive fields ──────────────────────────────────────────────
+        sentiment_score:        d.peterson_score,
+        decision_path:          d.decision_path ?? null,
       };
 
       setResult(mapped);
@@ -105,6 +120,7 @@ export default function TickerEvaluator({ onNewEvaluation }) {
         </div>
 
         <input
+          ref={inputRef}
           type="text"
           value={ticker}
           onChange={(e) => setTicker(e.target.value.toUpperCase())}
