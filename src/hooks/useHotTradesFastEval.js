@@ -21,10 +21,12 @@ export function useHotTradesFastEval(session = 'US') {
       const hotlist = data.hotlist ?? [];
 
       setMeta({
-        macro_context:  data.macro_context,
-        analyst_note:   data.analyst_note,
-        run_timestamp:  data.run_timestamp,
-        valid_until:    data.valid_until,
+        macro_context:   data.macro_context,
+        analyst_note:    data.analyst_note,
+        run_timestamp:   data.run_timestamp,
+        valid_until:     data.valid_until,
+        session_active:  data.session_active ?? false,
+        next_run_utc:    data.next_run_utc ?? null,
       });
 
       if (hotlist.length === 0) {

@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Activity, Radar, Brain, ArrowRight, TrendingUp, Flame } from 'lucide-react';
+import { RefreshCw, Activity, Radar, Brain, ArrowRight, TrendingUp } from 'lucide-react';
 import StatsOverview from '../components/StatsOverview';
 import PerformanceChart from '../components/PerformanceChart';
 import EvaluationCard from '../components/EvaluationCard';
 import DiscoveryCard from '../components/DiscoveryCard';
-import HotTradesTile from '../components/HotTradesTile';
+import HotTradesPanel from '../components/HotTradesPanel';
 import TickerEvaluator from '../components/TickerEvaluator';
 import HorizontalCarousel from '../components/HorizontalCarousel';
-import { useHotTradesFastEval } from '../hooks/useHotTradesFastEval';
 import { getPortfolioSummary, getRecentEvaluations, getRecentDiscoveries, refreshPortfolioPrices, BACKEND_ORIGIN } from '../services/api';
 import { useBackend } from '../context/BackendContext';
 
@@ -25,10 +24,6 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
   const [error,               setError]               = useState(null);
   const [lastUpdated,         setLastUpdated]         = useState(null);
   const [prefilledTicker,     setPrefilledTicker]     = useState('');
-
-  // Hot Trades — today's pre-market hotlist with fast-eval alpha scores
-  const [hotSession, setHotSession] = useState('US');
-  const { items: hotTrades, loading: loadingHotTrades } = useHotTradesFastEval(hotSession);
 
   const fetchPortfolio = useCallback(async () => {
     setLoadingPortfolio(true);
@@ -223,70 +218,8 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
         </div>
       </div>
 
-      {/* ── Hot Trades — compact tile grid with US / India tab ─────── */}
-      <div>
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-              <Flame size={14} className="text-orange-400" />
-              Hot Trades — Today's Watchlist
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Click tile to evaluate · hover ⓘ for catalyst &amp; thesis
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Session tab */}
-            {['US', 'India'].map((s) => (
-              <button
-                key={s}
-                onClick={() => setHotSession(s)}
-                className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
-                  hotSession === s
-                    ? 'bg-orange-500/15 border-orange-500/30 text-orange-300'
-                    : 'bg-slate-800 border-slate-700 text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                {s === 'US' ? '🇺🇸 US' : '🇮🇳 India'}
-              </button>
-            ))}
-            {onNavigate && (
-              <button
-                onClick={() => onNavigate('pre-market')}
-                className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors ml-1"
-              >
-                View Source <ArrowRight size={11} />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tile grid */}
-        {loadingHotTrades ? (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-xl bg-slate-800 animate-pulse" />
-            ))}
-          </div>
-        ) : hotTrades.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-8 flex flex-col items-center justify-center gap-2">
-            <Flame size={20} className="text-slate-700" />
-            <p className="text-sm text-slate-600">No hot trades for today's {hotSession} session yet.</p>
-            <p className="text-xs text-slate-700">Auto-generated 1h before market open · or trigger from Pre-Market page.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 overflow-visible">
-            {hotTrades.map((item) => (
-              <HotTradesTile
-                key={item.id ?? item.ticker}
-                item={item}
-                onEvaluate={handleDiscoveryEvaluate}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ── Hot Trades — self-contained panel ─────────────────────── */}
+      <HotTradesPanel onEvaluate={handleDiscoveryEvaluate} onNavigate={onNavigate} />
 
       {/* ── AI Radar — top-10 carousel ─────────────────────── */}
       <div>

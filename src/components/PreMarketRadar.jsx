@@ -145,11 +145,28 @@ function HotlistCard({ item, onEvaluate }) {
   );
 }
 
+function useCountdown(targetIso) {
+  const [label, setLabel] = useState('');
+  useEffect(() => {
+    if (!targetIso) { setLabel(''); return; }
+    const update = () => {
+      const diff = new Date(targetIso) - Date.now();
+      if (diff <= 0) { setLabel('now'); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setLabel(h > 0 ? `${h}h ${m}m` : `${m}m`);
+    };
+    update();
+    const timer = setInterval(update, 30000);
+    return () => clearInterval(timer);
+  }, [targetIso]);
+  return label;
+}
+
 export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
   const [data,      setData]      = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [running,   setRunning]   = useState(false);
-  const [timeLeft,  setTimeLeft]  = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -165,19 +182,9 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
 
   useEffect(() => { load(); }, [load]);
 
-  useEffect(() => {
-    if (!data?.valid_until) return;
-    const update = () => {
-      const diff = new Date(data.valid_until) - Date.now();
-      if (diff <= 0) { setTimeLeft('Expired'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setTimeLeft(`${h}h ${m}m until close`);
-    };
-    update();
-    const timer = setInterval(update, 60000);
-    return () => clearInterval(timer);
-  }, [data?.valid_until]);
+  const sessionActive = data?.session_active ?? false;
+  const closeCountdown    = useCountdown(sessionActive ? data?.valid_until : null);
+  const nextRunCountdown  = useCountdown(!sessionActive ? data?.next_run_utc : null);
 
   const handleRun = async () => {
     setRunning(true);
@@ -223,19 +230,40 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
               Last run: {new Date(data.run_timestamp).toLocaleString(undefined, {
                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
               })}
-              {timeLeft && <span className="text-cyan-800 ml-1">· {timeLeft}</span>}
+              {sessionActive && closeCountdown && (
+                <span className="text-cyan-800 ml-1">· {closeCountdown} until close</span>
+              )}
             </p>
           )}
         </div>
-        <button
-          onClick={handleRun}
-          disabled={running || loading}
-          className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 hover:border-cyan-500/30 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-40"
-        >
-          <RefreshCw size={11} className={running ? 'animate-spin' : ''} />
-          {running ? 'Running Sweep…' : 'Run Agent Now'}
-        </button>
+        {import.meta.env.DEV && (
+          <button
+            onClick={handleRun}
+            disabled={running || loading}
+            className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 hover:border-cyan-500/30 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-40"
+          >
+            <RefreshCw size={11} className={running ? 'animate-spin' : ''} />
+            {running ? 'Running Sweep…' : 'Run Agent Now'}
+          </button>
+        )}
       </div>
+
+      {/* Stale data / next-run banner */}
+      {!sessionActive && data?.hotlist?.length > 0 && (
+        <div className="flex items-center gap-2.5 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-2.5">
+          <Clock size={13} className="text-amber-400 shrink-0" />
+          <div className="min-w-0">
+            <span className="text-xs text-amber-300/80 font-medium">
+              Showing data from a prior session — market has closed.
+            </span>
+            {nextRunCountdown && (
+              <span className="text-xs text-amber-500/70 ml-1.5">
+                Research AI agent runs in <span className="font-semibold text-amber-400">{nextRunCountdown}</span>.
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Macro context */}
       {data?.macro_context && (
@@ -275,14 +303,16 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
           <p className="text-xs text-slate-700">
             Auto-runs at 8:30 AM ET (US) · 8:15 AM IST (India) · or trigger manually above.
           </p>
-          <button
-            onClick={handleRun}
-            disabled={running}
-            className="mt-2 flex items-center gap-2 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 rounded-lg px-4 py-2 transition-colors disabled:opacity-40"
-          >
-            <RefreshCw size={12} className={running ? 'animate-spin' : ''} />
-            {running ? 'Running…' : 'Generate Hotlist Now'}
-          </button>
+          {import.meta.env.DEV && (
+            <button
+              onClick={handleRun}
+              disabled={running}
+              className="mt-2 flex items-center gap-2 text-xs text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 rounded-lg px-4 py-2 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw size={12} className={running ? 'animate-spin' : ''} />
+              {running ? 'Running…' : 'Generate Hotlist Now'}
+            </button>
+          )}
         </div>
       )}
 
@@ -300,7 +330,9 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
       )}
 
       <p className="text-[11px] text-slate-700 text-right">
-        Valid for current trading session only · expires at market close
+        {sessionActive
+          ? 'Valid for current trading session only · expires at market close'
+          : 'Prior session data · fresh hotlist generated at next market open'}
       </p>
     </div>
   );
