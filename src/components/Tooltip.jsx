@@ -1,65 +1,95 @@
 /**
- * CSS-only tooltip using Tailwind group-hover.
- * No state, no portal — works inside overflow-hidden containers
- * as long as the nearest positioned ancestor has enough room.
- *
- * Usage:
- *   <Tooltip content="This is the explanation">
- *     <SomeTriggerElement />
- *   </Tooltip>
+ * Tooltip — renders via position:fixed so it escapes all overflow:hidden parents.
  *
  * Props:
- *   content  — string or JSX shown inside the tooltip bubble
+ *   content  — string or JSX
  *   position — 'top' (default) | 'bottom'
- *   width    — tailwind width class, e.g. 'w-52' (default)
+ *   width    — pixel width of the bubble (default 208 ≈ w-52)
  *   align    — 'center' (default) | 'left' | 'right'
- *              'right' anchors the bubble to the right edge of the trigger (extends leftward)
- *              'left'  anchors the bubble to the left edge of the trigger (extends rightward)
  */
-export default function Tooltip({ content, children, position = 'top', width = 'w-52', align = 'center' }) {
+import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+
+const GAP = 8;
+
+export default function Tooltip({
+  content,
+  children,
+  position = 'top',
+  width = 208,
+  align = 'center',
+}) {
+  const triggerRef  = useRef(null);
+  const [pos, setPos] = useState(null);
+
+  const show = useCallback(() => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setPos({ rect: r });
+  }, []);
+
+  const hide = useCallback(() => setPos(null), []);
+
+  let bubbleStyle = { width };
+  if (pos) {
+    const { rect } = pos;
+    const isTop = position !== 'bottom';
+
+    if (isTop) {
+      bubbleStyle.bottom = window.innerHeight - rect.top + GAP;
+    } else {
+      bubbleStyle.top = rect.bottom + GAP;
+    }
+
+    if (align === 'right') {
+      bubbleStyle.right = window.innerWidth - rect.right;
+    } else if (align === 'left') {
+      bubbleStyle.left = rect.left;
+    } else {
+      const centerX = rect.left + rect.width / 2;
+      bubbleStyle.left = Math.max(8, Math.min(centerX - width / 2, window.innerWidth - width - 8));
+    }
+  }
+
   const isTop = position !== 'bottom';
 
-  const horizClass =
-    align === 'right'  ? 'right-0' :
-    align === 'left'   ? 'left-0'  :
-    'left-1/2 -translate-x-1/2';
-
-  const arrowClass =
+  const arrowOffset =
     align === 'right'  ? 'right-3' :
     align === 'left'   ? 'left-3'  :
     'left-1/2 -translate-x-1/2';
 
   return (
-    <div className="relative group inline-flex">
-      {children}
-
-      {/* Bubble */}
+    <>
       <div
-        className={`
-          pointer-events-none absolute z-[9999]
-          ${width} ${isTop ? 'bottom-full mb-2' : 'top-full mt-2'}
-          ${horizClass}
-          opacity-0 group-hover:opacity-100
-          transition-opacity duration-150
-          bg-slate-800 border border-slate-700
-          text-slate-200 text-xs leading-relaxed
-          rounded-lg px-3 py-2 shadow-xl
-          whitespace-normal text-left
-        `}
+        ref={triggerRef}
+        className="inline-flex"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
       >
-        {content}
-
-        {/* Arrow */}
-        <span
-          className={`
-            absolute ${arrowClass}
-            border-4 border-transparent
-            ${isTop
-              ? 'top-full border-t-slate-700'
-              : 'bottom-full border-b-slate-700'}
-          `}
-        />
+        {children}
       </div>
-    </div>
+
+      {pos && createPortal(
+        <div
+          className="pointer-events-none fixed z-[99999]
+            bg-slate-800 border border-slate-700
+            text-slate-200 text-xs leading-relaxed
+            rounded-lg px-3 py-2 shadow-xl
+            whitespace-normal text-left"
+          style={bubbleStyle}
+        >
+          {content}
+          <span
+            className={`
+              absolute ${arrowOffset} border-4 border-transparent
+              ${isTop ? 'top-full border-t-slate-700' : 'bottom-full border-b-slate-700'}
+            `}
+          />
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

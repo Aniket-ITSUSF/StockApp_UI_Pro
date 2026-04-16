@@ -97,7 +97,7 @@ export default function AgentVoteGrid({ evaluation: ev }) {
       {AGENTS.map(({ key, label, name, tip }) => {
         const vote = ev?.[key];
         return (
-          <Tooltip key={key} content={<><strong>{name}</strong><br />{tip}</>} width="w-64">
+          <Tooltip key={key} content={<><strong>{name}</strong><br />{tip}</>} width={256}>
             <div
               className={`w-full flex flex-col items-center justify-center rounded-lg border py-1.5 cursor-default select-none ${voteStyle(vote)}`}
             >

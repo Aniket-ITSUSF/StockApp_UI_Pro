@@ -110,7 +110,7 @@ function ShadowCard({ pos, livePrice }) {
               {pos.ticker}
             </span>
             {/* Rejection badge */}
-            <Tooltip content={meta.tip} width="w-64">
+            <Tooltip content={meta.tip} width={256}>
               <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border cursor-default ${meta.bg} ${meta.color}`}>
                 <RejIcon size={11} />
                 {meta.label}
@@ -126,7 +126,7 @@ function ShadowCard({ pos, livePrice }) {
         </div>
 
         {/* Alpha score */}
-        <Tooltip content={ALPHA_TIP} width="w-56">
+        <Tooltip content={ALPHA_TIP} width={224}>
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={64} />
             <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
@@ -196,14 +196,14 @@ function ShadowCard({ pos, livePrice }) {
       {(pos.regime || pos.vix_level != null) && (
         <div className="flex items-center gap-2 flex-wrap">
           {pos.regime && (
-            <Tooltip content="Current market state at time of evaluation. Determines how agent votes are weighted." width="w-56">
+            <Tooltip content="Current market state at time of evaluation. Determines how agent votes are weighted." width={224}>
               <span className="cursor-default text-xs bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full">
                 {pos.regime}
               </span>
             </Tooltip>
           )}
           {pos.vix_level != null && (
-            <Tooltip content={VIX_TIP} width="w-60">
+            <Tooltip content={VIX_TIP} width={240}>
               <span className={`cursor-default text-xs font-medium px-2 py-0.5 rounded-full border ${
                 pos.vix_level > 20
                   ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
@@ -214,7 +214,7 @@ function ShadowCard({ pos, livePrice }) {
             </Tooltip>
           )}
           {pos.mtf_status && (
-            <Tooltip content="Multi-Timeframe filter result. FAIL = weekly trend was bearish at time of evaluation." width="w-56">
+            <Tooltip content="Multi-Timeframe filter result. FAIL = weekly trend was bearish at time of evaluation." width={224}>
               <span className={`cursor-default text-xs font-medium px-2 py-0.5 rounded-full border ${
                 pos.mtf_status === 'PASS'
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -225,7 +225,7 @@ function ShadowCard({ pos, livePrice }) {
             </Tooltip>
           )}
           {pos.required_threshold != null && (
-            <Tooltip content={`Alpha score must reach ${pos.required_threshold} to clear the consensus gate. This trade scored ${alpha.toFixed(1)}.`} width="w-56">
+            <Tooltip content={`Alpha score must reach ${pos.required_threshold} to clear the consensus gate. This trade scored ${alpha.toFixed(1)}.`} width={224}>
               <span className="cursor-default text-xs bg-slate-800 text-slate-500 border border-slate-700 px-2 py-0.5 rounded-full font-mono">
                 threshold {pos.required_threshold}
               </span>

@@ -7,15 +7,47 @@ import SentimentModal from './SentimentModal';
 
 const ACTION_BADGE = {
   // ── Legacy vote-pipeline actions ──────────────────────────────────────────
-  EXECUTED:                  { text: 'EXECUTED',        cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
-  REJECTED_CONSENSUS:        { text: 'REJECTED',        cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
-  REJECTED_CONSENSUS_REGIME: { text: 'REGIME BLOCK',   cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
-  REJECTED_RISK:             { text: 'RISK BLOCK',     cls: 'bg-rose-500/10    text-rose-400    border-rose-500/25' },
-  REJECTED_MTF:              { text: 'MTF BLOCK',      cls: 'bg-amber-500/10   text-amber-400   border-amber-500/25' },
+  EXECUTED: {
+    text: 'EXECUTED',
+    cls:  'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
+    tip:  'All 10 agents voted, every risk gate was cleared, and the score beat the threshold. This trade was opened in the paper portfolio.',
+  },
+  REJECTED_CONSENSUS: {
+    text: 'REJECTED',
+    cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
+    tip:  'The combined agent score was too low to proceed. Not enough agents agreed on a buy signal — the stock was rejected before the AI news analysis even ran.',
+  },
+  REJECTED_CONSENSUS_REGIME: {
+    text: 'REGIME BLOCK',
+    cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
+    tip:  'High market volatility raised the passing bar. The score wasn\'t strong enough to clear the stricter threshold required during turbulent markets.',
+  },
+  REJECTED_RISK: {
+    text: 'RISK BLOCK',
+    cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
+    tip:  'The stock was too volatile to trade safely. The nearest logical stop-loss would have risked more than 8% of capital — the Risk Manager blocked it.',
+  },
+  REJECTED_MTF: {
+    text: 'MTF BLOCK',
+    cls:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
+    tip:  'The weekly trend was bearish. Even though the daily chart looked interesting, the price was below its weekly moving average — buying here would mean swimming against the bigger tide.',
+  },
   // ── Cognitive-wing actions ────────────────────────────────────────────────
-  BUY:                       { text: 'BUY',            cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' },
-  HOLD:                      { text: 'BELOW THRESHOLD', cls: 'bg-amber-500/10  text-amber-400   border-amber-500/25' },
-  REJECTED_COGNITIVE:        { text: 'COGNITIVE VETO', cls: 'bg-purple-500/10  text-purple-400  border-purple-500/25' },
+  BUY: {
+    text: 'BUY',
+    cls:  'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
+    tip:  'The committee voted to buy. All gates passed, the AI news analysis was positive, and the final score cleared the threshold. A paper position was opened.',
+  },
+  HOLD: {
+    text: 'HOLD',
+    cls:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
+    tip:  'The committee watched but didn\'t act. All risk gates were cleared but the final score — after the AI news adjustment — still fell short of the buy threshold.',
+  },
+  REJECTED_COGNITIVE: {
+    text: 'COGNITIVE VETO',
+    cls:  'bg-purple-500/10 text-purple-400 border-purple-500/25',
+    tip:  'The AI news analyst found a verified, serious negative fact — such as a fraud filing, earnings collapse, or regulatory action. The system issued a hard block regardless of the technical score.',
+  },
 };
 
 const ALPHA_TIP =
@@ -85,15 +117,17 @@ export default function EvaluationCard({ evaluation: ev }) {
             <span className="text-lg font-bold tracking-widest text-slate-100 font-mono">
               {ev.ticker}
             </span>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
-              {badge.text}
-            </span>
+            <Tooltip content={badge.tip} width={224} position="bottom">
+              <span className={`cursor-default text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                {badge.text}
+              </span>
+            </Tooltip>
           </div>
           {ts && <span className="text-xs text-slate-500">{ts}</span>}
         </div>
 
         {/* Alpha score with tooltip */}
-        <Tooltip content={ALPHA_TIP} width="w-60" align="right">
+        <Tooltip content={ALPHA_TIP} width={240} align="right">
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={68} />
             <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
@@ -105,14 +139,14 @@ export default function EvaluationCard({ evaluation: ev }) {
       {(ev.regime || ev.vix_level != null) && (
         <div className="flex items-center gap-2 flex-wrap">
           {ev.regime && (
-            <Tooltip content={regimeTip} width="w-60" position="bottom">
+            <Tooltip content={regimeTip} width={240} position="bottom">
               <span className="cursor-default text-xs bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full">
                 {ev.regime}
               </span>
             </Tooltip>
           )}
           {ev.vix_level != null && (
-            <Tooltip content={VIX_TIP} width="w-60" position="bottom">
+            <Tooltip content={VIX_TIP} width={240} position="bottom">
               <span className={`cursor-default text-xs font-medium px-2 py-0.5 rounded-full border ${
                 ev.vix_level > 20
                   ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
