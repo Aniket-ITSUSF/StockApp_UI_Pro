@@ -1,12 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const AUTO_INTERVAL_MS = 4500;
-
 export default function HorizontalCarousel({ items = [], renderItem, emptyNode = null }) {
-  const trackRef  = useRef(null);
-  const timerRef  = useRef(null);
-  const pausedRef = useRef(false);
+  const trackRef = useRef(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
 
@@ -25,27 +21,9 @@ export default function HorizontalCarousel({ items = [], renderItem, emptyNode =
     t.scrollBy({ left: dir * cardW, behavior: 'smooth' });
   }, []);
 
-  const startAuto = useCallback(() => {
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      if (pausedRef.current) return;
-      const t = trackRef.current;
-      if (!t) return;
-      if (t.scrollLeft >= t.scrollWidth - t.clientWidth - 4) {
-        t.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        const child = t.firstElementChild;
-        const cardW = child ? child.offsetWidth + 16 : 340;
-        t.scrollBy({ left: cardW, behavior: 'smooth' });
-      }
-    }, AUTO_INTERVAL_MS);
-  }, []);
-
   useEffect(() => {
     updateArrows();
-    if (items.length > 1) startAuto();
-    return () => clearInterval(timerRef.current);
-  }, [items.length, startAuto, updateArrows]);
+  }, [items.length, updateArrows]);
 
   if (!items.length) return emptyNode;
 
@@ -66,8 +44,6 @@ export default function HorizontalCarousel({ items = [], renderItem, emptyNode =
       <div
         ref={trackRef}
         onScroll={updateArrows}
-        onMouseEnter={() => { pausedRef.current = true; }}
-        onMouseLeave={() => { pausedRef.current = false; }}
         className="flex gap-4 overflow-x-auto pb-1"
         style={{
           scrollSnapType: 'x mandatory',

@@ -22,7 +22,7 @@ export default function Settings() {
   const { Icon: StatusIcon } = statusMeta;
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-6">
       <div className="flex items-center gap-2">
         <SettingsIcon size={18} className="text-slate-400" />
         <div>
@@ -38,7 +38,7 @@ export default function Settings() {
       </div>
 
       {/* Backend connection status */}
-      <div className={`border rounded-xl px-4 py-3 flex items-center justify-between gap-4 ${statusMeta.bg}`}>
+      <div className={`border rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${statusMeta.bg}`}>
         <div className="flex items-center gap-2.5">
           <StatusIcon size={14} className={`shrink-0 ${statusMeta.color} ${status === 'checking' ? 'animate-spin' : ''}`} />
           <div>

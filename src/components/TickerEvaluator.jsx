@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Loader2, AlertCircle, Zap, ChevronDown } from 'lucide-react';
-import { evaluateTicker } from '../services/api';
+import { evaluateTicker, evaluateTickerFast } from '../services/api';
 import EvaluationCard from './EvaluationCard';
 
 const QUICK_TICKERS = {
@@ -21,12 +21,31 @@ function detectMarket() {
   return 'US';
 }
 
+function mapVotes(d, sym) {
+  return {
+    ...d,
+    ticker: sym,
+    momentum_vote:          d.votes?.find(v => v.agent_name === 'momentum')?.vote,
+    mean_reversion_vote:    d.votes?.find(v => v.agent_name === 'mean_reversion')?.vote,
+    support_vote:           d.votes?.find(v => v.agent_name === 'support_resistance')?.vote,
+    relative_strength_vote: d.votes?.find(v => v.agent_name === 'relative_strength')?.vote,
+    complex_pullback_vote:  d.votes?.find(v => v.agent_name === 'complex_pullback')?.vote,
+    stat_arb_vote:          d.stat_arb_vote?.vote,
+    failure_test_vote:      d.failure_test_vote?.vote,
+    final_alpha_score:      d.final_weighted_alpha_score ?? d.weighted_alpha_score,
+    reasoning:              d.reasoning ?? d.decision_reason,
+    sentiment_score:        d.peterson_score,
+    decision_path:          d.decision_path ?? null,
+  };
+}
+
 export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPrefilledConsumed }) {
-  const [market, setMarket]   = useState(detectMarket);
-  const [ticker, setTicker]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult]   = useState(null);
-  const [error, setError]     = useState(null);
+  const [market, setMarket]           = useState(detectMarket);
+  const [ticker, setTicker]           = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [result, setResult]           = useState(null);
+  const [error, setError]             = useState(null);
   const inputRef = useRef(null);
 
   // Reset result/error when market changes
@@ -59,35 +78,29 @@ export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPr
     const sym = buildSym(t ?? ticker);
     if (!sym) return;
     setLoading(true);
+    setSentimentLoading(false);
     setError(null);
     setResult(null);
     try {
-      const res = await evaluateTicker(sym);
-      const d   = res.data;
+      // ── Phase 1: math-only (fast) — show card immediately ─────────────
+      const fastRes = await evaluateTickerFast(sym);
+      const partial = mapVotes({ ...fastRes.data, action_taken: 'ANALYZING' }, sym);
+      setResult(partial);
+      setLoading(false);
+      setSentimentLoading(true);
 
-      const mapped = {
-        ...d,
-        ticker: sym,
-        momentum_vote:          d.votes?.find(v => v.agent_name === 'momentum')?.vote,
-        mean_reversion_vote:    d.votes?.find(v => v.agent_name === 'mean_reversion')?.vote,
-        support_vote:           d.votes?.find(v => v.agent_name === 'support_resistance')?.vote,
-        relative_strength_vote: d.votes?.find(v => v.agent_name === 'relative_strength')?.vote,
-        complex_pullback_vote:  d.votes?.find(v => v.agent_name === 'complex_pullback')?.vote,
-        stat_arb_vote:          d.stat_arb_vote?.vote,
-        failure_test_vote:      d.failure_test_vote?.vote,
-        final_alpha_score:      d.final_weighted_alpha_score ?? d.weighted_alpha_score,
-        reasoning:              d.reasoning ?? d.decision_reason,
-        // ── Cognitive fields ──────────────────────────────────────────────
-        sentiment_score:        d.peterson_score,
-        decision_path:          d.decision_path ?? null,
-      };
-
-      setResult(mapped);
-      if (onNewEvaluation) onNewEvaluation(mapped);
+      // ── Phase 2: full AI evaluation — resolves badge + sentiment ───────
+      const fullRes = await evaluateTicker(sym);
+      const full = mapVotes(fullRes.data, sym);
+      setResult(full);
+      setSentimentLoading(false);
+      if (onNewEvaluation) onNewEvaluation(full);
     } catch (err) {
       setError(err.response?.data?.detail ?? err.message ?? 'Evaluation failed');
+      setResult(null);
     } finally {
       setLoading(false);
+      setSentimentLoading(false);
     }
   };
 
@@ -131,13 +144,13 @@ export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPr
         />
         <button
           onClick={() => run()}
-          disabled={loading || !ticker.trim()}
+          disabled={loading || sentimentLoading || !ticker.trim()}
           className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 border border-emerald-500/30 text-emerald-400 text-sm font-medium rounded-lg transition-colors shrink-0"
         >
           {loading
             ? <Loader2 size={14} className="animate-spin" />
             : <Search size={14} />}
-          {loading ? 'Analyzing…' : 'Evaluate'}
+          {(loading || sentimentLoading) ? 'Analyzing…' : 'Evaluate'}
         </button>
       </div>
 
@@ -176,7 +189,7 @@ export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPr
       )}
 
       {/* Result */}
-      {result && <EvaluationCard evaluation={result} />}
+      {result && <EvaluationCard evaluation={result} sentimentLoading={sentimentLoading} />}
     </div>
   );
 }

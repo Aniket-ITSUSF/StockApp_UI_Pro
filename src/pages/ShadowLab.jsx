@@ -94,7 +94,7 @@ function ShadowCard({ pos, livePrice }) {
   const alpha    = rawScore > 1 ? rawScore : rawScore * 100;
 
   const ts = pos.timestamp
-    ? new Date(pos.timestamp).toLocaleString('en-US', {
+    ? new Date(pos.timestamp).toLocaleString(undefined, {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
       })
     : null;
@@ -311,10 +311,10 @@ export default function ShadowLab() {
   ];
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-6">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <FlaskConical size={20} className="text-amber-400 shrink-0" />
           <div>
@@ -325,7 +325,7 @@ export default function ShadowLab() {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-col items-start sm:items-end gap-1">
           {marketLines.map(l => (
             <span key={l} className="text-[11px] text-slate-500 font-mono">{l}</span>
           ))}
@@ -356,7 +356,7 @@ export default function ShadowLab() {
 
       {/* Summary cards */}
       {!loading && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Hypothetical Cost',  value: totalCost,  display: null },
             { label: 'Hypothetical Value', value: totalValue, display: null },

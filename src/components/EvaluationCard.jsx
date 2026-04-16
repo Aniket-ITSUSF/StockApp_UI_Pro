@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Brain, TrendingUp, TrendingDown, Minus, ShieldX } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import CircularProgress from './CircularProgress';
 import AgentVoteGrid from './AgentVoteGrid';
 import Tooltip from './Tooltip';
-import SentimentModal from './SentimentModal';
+import SentimentStrip from './SentimentStrip';
 
 const ACTION_BADGE = {
   // ── Legacy vote-pipeline actions ──────────────────────────────────────────
@@ -48,6 +48,11 @@ const ACTION_BADGE = {
     cls:  'bg-purple-500/10 text-purple-400 border-purple-500/25',
     tip:  'The AI news analyst found a verified, serious negative fact — such as a fraud filing, earnings collapse, or regulatory action. The system issued a hard block regardless of the technical score.',
   },
+  ANALYZING: {
+    text: 'ANALYZING',
+    cls:  'bg-purple-500/10 text-purple-300 border-purple-500/25',
+    tip:  'Math calculations are complete. The AI committee is now reading the news and computing sentiment — the final verdict is moments away.',
+  },
 };
 
 const ALPHA_TIP =
@@ -59,6 +64,7 @@ const VIX_TIP =
   'The CBOE Volatility Index (^VIX) measures expected 30-day market volatility. ' +
   'VIX > 20 shifts agent weights toward mean-reversion strategies. ' +
   'VIX > 30 (US) or > 25 (India) triggers HIGH_VOLATILITY regime.';
+
 
 const REGIME_TIP = {
   TRENDING:        'Low volatility, trend-following weights active. Momentum and Complex Pullback agents carry more influence.',
@@ -80,16 +86,8 @@ function buildReasoning(ev) {
   return parts.length ? parts.join(' · ') : 'No additional context available.';
 }
 
-const SENTIMENT_META = {
-  BULLISH:   { label: 'Bullish',   cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', Icon: TrendingUp  },
-  NEUTRAL:   { label: 'Neutral',   cls: 'text-amber-400   bg-amber-500/10   border-amber-500/25',   Icon: Minus       },
-  BEARISH:   { label: 'Bearish',   cls: 'text-rose-400    bg-rose-500/10    border-rose-500/25',    Icon: TrendingDown },
-  HARD_VETO: { label: 'Hard Veto', cls: 'text-rose-300    bg-rose-900/40    border-rose-500/40',    Icon: ShieldX     },
-};
-
-export default function EvaluationCard({ evaluation: ev }) {
-  const [open, setOpen]             = useState(false);
-  const [showSentiment, setShowSentiment] = useState(false);
+export default function EvaluationCard({ evaluation: ev, sentimentLoading = false }) {
+  const [open, setOpen] = useState(false);
   if (!ev) return null;
 
   const action = ev.action_taken ?? 'REJECTED_CONSENSUS';
@@ -99,13 +97,40 @@ export default function EvaluationCard({ evaluation: ev }) {
   const alpha    = rawScore > 1 ? rawScore : rawScore * 100;
 
   const ts = ev.timestamp
-    ? new Date(ev.timestamp).toLocaleString('en-US', {
+    ? new Date(ev.timestamp).toLocaleString(undefined, {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
       })
     : null;
 
   const reasoning = ev.reasoning ?? buildReasoning(ev);
   const regimeTip = REGIME_TIP[ev.regime] ?? 'Current market state determines agent vote weighting.';
+
+  const oracle = ev.oracle_prediction?.status === 'SUCCESS' ? ev.oracle_prediction.data : null;
+  const oracleTip = oracle ? (
+    <div className="flex flex-col gap-2">
+      <p className="font-semibold text-slate-100 text-[11px] uppercase tracking-wider">Options Market Prediction</p>
+      <p className="text-slate-300">
+        The options market is "pricing in" an expected move of
+        {' '}<span className="text-violet-300 font-semibold">±{(oracle.expected_move_pct * 100).toFixed(2)}%</span>
+        {' '}(±${oracle.expected_move_dollar.toFixed(2)}) before {oracle.expiry} ({oracle.dte} days).
+      </p>
+      <div className="bg-slate-900 rounded-md px-3 py-2 flex flex-col gap-1">
+        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">68% Probability Range</p>
+        <div className="flex justify-between font-mono text-xs">
+          <span className="text-emerald-400">↑ ${oracle.upper_bound.toFixed(2)}</span>
+          <span className="text-rose-400">↓ ${oracle.lower_bound.toFixed(2)}</span>
+        </div>
+      </div>
+      <p className="text-slate-400 text-[11px]">
+        <span className="font-semibold text-slate-300">ATM IV:</span> {(oracle.average_atm_iv * 100).toFixed(1)}%
+      </p>
+      <p className="text-slate-500 text-[11px] border-t border-slate-700 pt-1.5">
+        Calculated from options contracts closest to the current price.
+        Formula: Expected Move = Price × IV × √(DTE ÷ 365).
+        Technical agents use these bounds to veto signals that contradict the market’s forecast.
+      </p>
+    </div>
+  ) : null;
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 hover:border-slate-700 transition-colors duration-150">
@@ -118,7 +143,8 @@ export default function EvaluationCard({ evaluation: ev }) {
               {ev.ticker}
             </span>
             <Tooltip content={badge.tip} width={224} position="bottom">
-              <span className={`cursor-default text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+              <span className={`cursor-default text-xs font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${badge.cls}`}>
+                {action === 'ANALYZING' && <Loader2 size={10} className="animate-spin" />}
                 {badge.text}
               </span>
             </Tooltip>
@@ -131,6 +157,11 @@ export default function EvaluationCard({ evaluation: ev }) {
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={68} />
             <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
+            {ev.cognitive_bonus != null && ev.cognitive_bonus !== 0 && (
+              <span className={`text-[9px] font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {ev.cognitive_bonus > 0 ? '+' : ''}{ev.cognitive_bonus.toFixed(1)} AI
+              </span>
+            )}
           </div>
         </Tooltip>
       </div>
@@ -156,42 +187,18 @@ export default function EvaluationCard({ evaluation: ev }) {
               </span>
             </Tooltip>
           )}
+          {oracle && (
+            <Tooltip content={oracleTip} width={296} position="bottom">
+              <span className="cursor-default text-xs font-medium px-2 py-0.5 rounded-full border bg-violet-500/10 text-violet-300 border-violet-500/20">
+                Future Prediction: ±{(oracle.expected_move_pct * 100).toFixed(2)}%
+              </span>
+            </Tooltip>
+          )}
         </div>
       )}
 
       {/* Sentiment strip */}
-      {ev.cognitive_signal && (
-        <>
-          {showSentiment && (
-            <SentimentModal ev={ev} onClose={() => setShowSentiment(false)} />
-          )}
-          <button
-            onClick={() => setShowSentiment(true)}
-            className="w-full flex items-center justify-between gap-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-lg px-3 py-2 transition-colors group"
-          >
-            <div className="flex items-center gap-2">
-              <Brain size={12} className="text-purple-400 shrink-0" />
-              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sentiment</span>
-              {(() => {
-                const m = SENTIMENT_META[ev.cognitive_signal] ?? SENTIMENT_META.NEUTRAL;
-                const { Icon } = m;
-                return (
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${m.cls}`}>
-                    <Icon size={9} />
-                    {m.label}
-                  </span>
-                );
-              })()}
-              {ev.sentiment_score != null && (
-                <span className="text-[10px] font-mono text-slate-400">
-                  {ev.sentiment_score >= 0 ? '+' : ''}{ev.sentiment_score.toFixed(2)}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] text-slate-600 group-hover:text-slate-400 transition-colors">View analysis →</span>
-          </button>
-        </>
-      )}
+      <SentimentStrip ev={ev} loading={sentimentLoading} />
 
       {/* Agent voting grid */}
       <AgentVoteGrid evaluation={ev} />

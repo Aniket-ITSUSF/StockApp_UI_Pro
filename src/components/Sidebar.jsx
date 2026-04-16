@@ -1,13 +1,14 @@
-import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Brain } from 'lucide-react';
+import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Brain, Globe } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
 
 const NAV = [
-  { id: 'dashboard',    label: 'Dashboard',         icon: BarChart2    },
-  { id: 'portfolio',    label: 'Real Portfolio',     icon: Briefcase    },
-  { id: 'shadow-lab',  label: 'Shadow Lab',         icon: FlaskConical },
-  { id: 'ai-radar',    label: 'AI Radar',           icon: Radar        },
-  { id: 'intelligence', label: 'Intelligence',      icon: Brain        },
-  { id: 'settings',    label: 'Settings',           icon: Settings     },
+  { id: 'dashboard',    label: 'Dashboard',     icon: BarChart2    },
+  { id: 'portfolio',    label: 'Portfolio',      icon: Briefcase    },
+  { id: 'shadow-lab',  label: 'Shadow Lab',     icon: FlaskConical },
+  { id: 'ai-radar',    label: 'AI Radar',       icon: Radar        },
+  { id: 'pre-market',  label: 'Pre-Market',     icon: Globe        },
+  { id: 'intelligence', label: 'Intelligence',  icon: Brain        },
+  { id: 'settings',    label: 'Settings',       icon: Settings     },
 ];
 
 function StatusFooter() {
@@ -76,9 +77,32 @@ function StatusFooter() {
   );
 }
 
+export function MobileNav({ currentPage, onNavigate }) {
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 flex items-stretch safe-bottom">
+      {NAV.map((item) => {
+        const active  = currentPage === item.id;
+        const NavIcon = item.icon;
+        return (
+          <button
+            key={item.id}
+            onClick={() => onNavigate(item.id)}
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors ${
+              active ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <NavIcon size={18} className={active ? 'text-emerald-400' : ''} />
+            <span className="leading-none">{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function Sidebar({ currentPage, onNavigate }) {
   return (
-    <aside className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col h-full shrink-0">
+    <aside className="hidden md:flex w-56 bg-slate-900 border-r border-slate-800 flex-col h-full shrink-0">
 
       {/* Logo */}
       <div className="px-4 py-5 border-b border-slate-800">

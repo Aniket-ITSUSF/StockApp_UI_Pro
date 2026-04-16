@@ -20,7 +20,7 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
   const market     = MARKET_BADGE[disc.market]     ?? MARKET_BADGE.Other;
 
   const ts = disc.evaluation_timestamp
-    ? new Date(disc.evaluation_timestamp).toLocaleString('en-US', {
+    ? new Date(disc.evaluation_timestamp).toLocaleString(undefined, {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
       })
     : null;

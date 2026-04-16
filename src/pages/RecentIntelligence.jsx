@@ -54,10 +54,10 @@ export default function RecentIntelligence() {
   useEffect(() => { load(1); }, [load]);
 
   return (
-    <div className="p-6 flex flex-col gap-6 min-h-full">
+    <div className="p-4 sm:p-6 flex flex-col gap-6 min-h-full">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Brain size={18} className="text-emerald-400" />

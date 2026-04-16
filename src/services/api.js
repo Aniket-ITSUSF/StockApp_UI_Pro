@@ -16,8 +16,10 @@ const api = axios.create({
 });
 
 export const getHealth          = () => axios.get(HEALTH_URL, { timeout: 5000 });
-export const getPortfolioSummary = () => api.get('/portfolio/summary');
+export const getPortfolioSummary    = ()  => api.get('/portfolio/summary');
+export const refreshPortfolioPrices = ()  => api.post('/portfolio/refresh');
 export const evaluateTicker      = (ticker)  => api.post(`/evaluate/${ticker.toUpperCase().trim()}`);
+export const evaluateTickerFast  = (ticker)  => api.post(`/evaluate/${ticker.toUpperCase().trim()}/fast`);
 export const getRecentEvaluations = ()       => api.get('/evaluations/recent');
 export const getCurrentPrice     = (ticker)  => api.get(`/price/${ticker.toUpperCase().trim()}`);
 export const getBatchPrices      = (tickers) => api.post('/prices/batch', { tickers });
@@ -25,5 +27,8 @@ export const getShadowPositions    = ()                    => api.get('/shadow/p
 export const getRecentDiscoveries  = ()                    => api.get('/discoveries/recent');
 export const getEvaluationsPaged   = (page = 1, limit = 20) => api.get('/evaluations', { params: { page, limit } });
 export const getDiscoveriesPaged   = (page = 1, limit = 20) => api.get('/discoveries', { params: { page, limit } });
+
+export const getPreMarketHotlist   = (session = 'US') => api.get('/v1/research/pre-market/hotlist', { params: { market_session: session } });
+export const runPreMarketAgent     = (session = 'US') => api.post(`/v1/research/pre-market/run?market_session=${session}`);
 
 export default api;

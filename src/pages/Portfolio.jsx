@@ -166,10 +166,10 @@ export default function Portfolio() {
   if (usTickers.length  > 0) marketLines.push(`NYSE: ${marketStatusLabel('US')}`);
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 flex flex-col gap-6">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-slate-100">Real Portfolio</h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -178,7 +178,7 @@ export default function Portfolio() {
         </div>
 
         {/* Market status + last-updated */}
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-col items-start sm:items-end gap-1">
           {marketLines.map((line) => (
             <span key={line} className="text-[11px] text-slate-500 font-mono">{line}</span>
           ))}
@@ -205,7 +205,7 @@ export default function Portfolio() {
 
       {/* Summary cards */}
       {!loading && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Cost Basis',    value: fmtUSD(totalCost),  pnl: null },
             { label: 'Market Value',  value: fmtUSD(totalValue), pnl: null },
@@ -228,8 +228,8 @@ export default function Portfolio() {
       )}
 
       {/* Positions table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[560px]">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-950/50">
               {['Ticker', 'Entry', 'Current', 'Stop Loss', 'Unrealized P&L'].map((h) => (
