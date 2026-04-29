@@ -23,9 +23,9 @@ function StatCard({ title, value, sub, CardIcon, positive }) {
         <CardIcon size={18} className={accent} />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-widest truncate">{title}</p>
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest truncate">{title}</p>
         <p className={`text-2xl font-bold tabular-nums leading-tight ${accent}`}>{value}</p>
-        {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
+        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
       </div>
     </div>
   );

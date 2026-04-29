@@ -82,14 +82,14 @@ export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPr
     setError(null);
     setResult(null);
     try {
-      // ── Phase 1: math-only (fast) — show card immediately ─────────────
+      // ── Phase 1: math-only (fast) - show card immediately ─────────────
       const fastRes = await evaluateTickerFast(sym);
       const partial = mapVotes({ ...fastRes.data, action_taken: 'ANALYZING' }, sym);
       setResult(partial);
       setLoading(false);
       setSentimentLoading(true);
 
-      // ── Phase 2: full AI evaluation — resolves badge + sentiment ───────
+      // ── Phase 2: full AI evaluation - resolves badge + sentiment ───────
       const fullRes = await evaluateTicker(sym);
       const full = mapVotes(fullRes.data, sym);
       setResult(full);

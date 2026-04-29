@@ -1,9 +1,9 @@
 /**
  * Market hours utilities for the P&L polling system.
  *
- * Rules (no holiday handling — weekday + time window is sufficient for paper trading):
- *   India (NSE/BSE)  — Asia/Kolkata   — Mon-Fri  09:15 – 15:30 IST
- *   US (NYSE/NASDAQ) — America/New_York — Mon-Fri  09:30 – 16:00 ET
+ * Rules (no holiday handling - weekday + time window is sufficient for paper trading):
+ *   India (NSE/BSE)  - Asia/Kolkata   - Mon-Fri  09:15 – 15:30 IST
+ *   US (NYSE/NASDAQ) - America/New_York - Mon-Fri  09:30 – 16:00 ET
  */
 
 const INDIA_SUFFIXES = ['.NS', '.BO'];
@@ -16,7 +16,7 @@ export function getMarketForTicker(ticker) {
 
 /**
  * Returns true if the given market is currently open.
- * Uses the browser's Intl API — no external dependency.
+ * Uses the browser's Intl API - no external dependency.
  */
 export function isMarketOpen(market) {
   const now = new Date();

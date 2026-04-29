@@ -65,7 +65,7 @@ export default function PerformanceChart({ evaluations = [] }) {
       {data.length === 0 ? (
         <div className="h-52 flex items-center justify-center">
           <p className="text-sm text-slate-600">
-            No evaluations yet — evaluate a ticker to populate this chart.
+            No evaluations yet - evaluate a ticker to populate this chart.
           </p>
         </div>
       ) : (

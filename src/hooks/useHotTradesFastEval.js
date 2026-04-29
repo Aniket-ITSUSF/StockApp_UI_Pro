@@ -6,7 +6,7 @@ import { getPreMarketHotlist, evaluateTickerFast } from '../services/api';
  * evaluateTickerFast() concurrently for every ticker.  Returns merged items
  * (hotlist fields + alpha_score, current_price, regime from fast eval).
  *
- * Fast eval is math-only — zero LLM tokens consumed.
+ * Fast eval is math-only - zero LLM tokens consumed.
  */
 export function useHotTradesFastEval(session = 'US') {
   const [items,   setItems]   = useState([]);
@@ -34,7 +34,7 @@ export function useHotTradesFastEval(session = 'US') {
         return;
       }
 
-      // Parallel fast eval — Promise.allSettled so one failure never blocks others
+      // Parallel fast eval - Promise.allSettled so one failure never blocks others
       const evals = await Promise.allSettled(
         hotlist.map((item) => evaluateTickerFast(item.ticker))
       );

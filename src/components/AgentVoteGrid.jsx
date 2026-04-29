@@ -25,7 +25,7 @@ export const AGENTS = [
     label: 'SR',
     name:  'Support / Resistance',
     tip:   'Identifies key price floors and ceilings from historical data. Votes BUY when ' +
-           'price bounces off a proven support level — a zone where buyers have historically ' +
+           'price bounces off a proven support level - a zone where buyers have historically ' +
            'stepped in. Avoids chasing breakouts into resistance.',
   },
   {
@@ -33,7 +33,7 @@ export const AGENTS = [
     label: 'RS',
     name:  'Relative Strength',
     tip:   'Compares the stock\'s performance against its sector. Votes BUY only for ' +
-           'sector out-performers — stocks that go up more than peers on up days and fall ' +
+           'sector out-performers - stocks that go up more than peers on up days and fall ' +
            'less on down days. Filters out laggards within a sector.',
   },
   {
@@ -50,7 +50,7 @@ export const AGENTS = [
     name:  'Statistical Arb',
     tip:   'Uses a 30-day rolling Z-score to measure how far the stock has deviated from ' +
            'its sector ETF. Votes BUY when Z-score < −2.0 (stock is statistically cheap ' +
-           'vs sector) and SELL when Z-score > +2.0. Alpha-hunter — does not count toward ' +
+           'vs sector) and SELL when Z-score > +2.0. Alpha-hunter - does not count toward ' +
            'the 65% consensus threshold.',
   },
   {
@@ -59,14 +59,14 @@ export const AGENTS = [
     name:  'Failure Test',
     tip:   'Detects failed breakdowns: price briefly dips below a key support, triggering ' +
            'retail stop-losses, then immediately reverses up. This "liquidity trap" is a ' +
-           'classic institutional accumulation signal. Alpha-hunter — does not count toward ' +
+           'classic institutional accumulation signal. Alpha-hunter - does not count toward ' +
            'the 65% consensus threshold.',
   },
   {
     key:   'mtf_status',
     label: 'MTF',
     name:  'Multi-Timeframe',
-    tip:   'Veto gate — not a vote. Checks that the weekly chart agrees with the daily ' +
+    tip:   'Veto gate - not a vote. Checks that the weekly chart agrees with the daily ' +
            'setup (price must be above the weekly 20 SMA). Prevents buying a short-term ' +
            'daily bounce when the stock is in a weekly downtrend. A FAIL here blocks the ' +
            'trade regardless of consensus score.',

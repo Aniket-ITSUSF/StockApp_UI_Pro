@@ -99,7 +99,7 @@ export default function Portfolio() {
   const [data,       setData]       = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
-  // livePrices: { [ticker]: price } — updated by the poller, not stored in DB
+  // livePrices: { [ticker]: price } - updated by the poller, not stored in DB
   const [livePrices, setLivePrices] = useState({});
   const [lastPolled, setLastPolled] = useState(null);
   const [polling,    setPolling]    = useState(false);
@@ -120,7 +120,7 @@ export default function Portfolio() {
     const allTickers     = positions.map((p) => p.ticker);
     const openTickers    = filterOpenMarketTickers(allTickers);
 
-    if (openTickers.length === 0) return; // all markets closed — skip
+    if (openTickers.length === 0) return; // all markets closed - skip
 
     setPolling(true);
     try {
@@ -129,7 +129,7 @@ export default function Portfolio() {
       setLivePrices((prev) => ({ ...prev, ...prices }));
       setLastPolled(new Date());
     } catch {
-      // Silent fail — keep showing last known prices
+      // Silent fail - keep showing last known prices
     } finally {
       setPolling(false);
     }
@@ -263,7 +263,7 @@ export default function Portfolio() {
       {positions.length > 0 && (
         <p className="text-[11px] text-slate-600 text-right">
           Prices polled from Yahoo Finance every 5 min · market hours only ·
-          no WebSocket — paper trading does not require sub-minute precision
+          no WebSocket - paper trading does not require sub-minute precision
         </p>
       )}
     </div>

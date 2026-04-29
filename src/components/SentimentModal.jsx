@@ -66,7 +66,7 @@ export default function SentimentModal({ ev, onClose }) {
           <div className="flex items-center gap-2.5">
             <Brain size={16} className="text-purple-400" />
             <span className="text-sm font-bold text-slate-100">
-              Market Sentiment — <span className="font-mono tracking-widest text-purple-300">{ev.ticker}</span>
+              Market Sentiment - <span className="font-mono tracking-widest text-purple-300">{ev.ticker}</span>
             </span>
           </div>
           <button
@@ -107,7 +107,7 @@ export default function SentimentModal({ ev, onClose }) {
               <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-300 leading-relaxed">
                 <strong>Crowd Trap Detected:</strong> Herd sentiment is elevated but structural facts are neutral.
-                The AI system is discounting this enthusiasm — treat bullish signals with caution.
+                The AI system is discounting this enthusiasm - treat bullish signals with caution.
               </p>
             </div>
           )}

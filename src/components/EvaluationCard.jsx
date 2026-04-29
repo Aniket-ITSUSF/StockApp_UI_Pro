@@ -15,7 +15,7 @@ const ACTION_BADGE = {
   REJECTED_CONSENSUS: {
     text: 'REJECTED',
     cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
-    tip:  'The combined agent score was too low to proceed. Not enough agents agreed on a buy signal — the stock was rejected before the AI news analysis even ran.',
+    tip:  'The combined agent score was too low to proceed. Not enough agents agreed on a buy signal - the stock was rejected before the AI news analysis even ran.',
   },
   REJECTED_CONSENSUS_REGIME: {
     text: 'REGIME BLOCK',
@@ -25,12 +25,12 @@ const ACTION_BADGE = {
   REJECTED_RISK: {
     text: 'RISK BLOCK',
     cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
-    tip:  'The stock was too volatile to trade safely. The nearest logical stop-loss would have risked more than 8% of capital — the Risk Manager blocked it.',
+    tip:  'The stock was too volatile to trade safely. The nearest logical stop-loss would have risked more than 8% of capital - the Risk Manager blocked it.',
   },
   REJECTED_MTF: {
     text: 'MTF BLOCK',
     cls:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
-    tip:  'The weekly trend was bearish. Even though the daily chart looked interesting, the price was below its weekly moving average — buying here would mean swimming against the bigger tide.',
+    tip:  'The weekly trend was bearish. Even though the daily chart looked interesting, the price was below its weekly moving average - buying here would mean swimming against the bigger tide.',
   },
   // ── Cognitive-wing actions ────────────────────────────────────────────────
   BUY: {
@@ -41,17 +41,17 @@ const ACTION_BADGE = {
   HOLD: {
     text: 'HOLD',
     cls:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
-    tip:  'The committee watched but didn\'t act. All risk gates were cleared but the final score — after the AI news adjustment — still fell short of the buy threshold.',
+    tip:  'The committee watched but didn\'t act. All risk gates were cleared but the final score - after the AI news adjustment - still fell short of the buy threshold.',
   },
   REJECTED_COGNITIVE: {
     text: 'COGNITIVE VETO',
     cls:  'bg-purple-500/10 text-purple-400 border-purple-500/25',
-    tip:  'The AI news analyst found a verified, serious negative fact — such as a fraud filing, earnings collapse, or regulatory action. The system issued a hard block regardless of the technical score.',
+    tip:  'The AI news analyst found a verified, serious negative fact - such as a fraud filing, earnings collapse, or regulatory action. The system issued a hard block regardless of the technical score.',
   },
   ANALYZING: {
     text: 'ANALYZING',
     cls:  'bg-purple-500/10 text-purple-300 border-purple-500/25',
-    tip:  'Math calculations are complete. The AI committee is now reading the news and computing sentiment — the final verdict is moments away.',
+    tip:  'Math calculations are complete. The AI committee is now reading the news and computing sentiment - the final verdict is moments away.',
   },
 };
 
@@ -156,9 +156,9 @@ export default function EvaluationCard({ evaluation: ev, sentimentLoading = fals
         <Tooltip content={ALPHA_TIP} width={240} align="right">
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={68} />
-            <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
+            <span className="text-xs text-slate-400 mt-1 font-medium">ALPHA</span>
             {ev.cognitive_bonus != null && ev.cognitive_bonus !== 0 && (
-              <span className={`text-[9px] font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <span className={`text-xs font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {ev.cognitive_bonus > 0 ? '+' : ''}{ev.cognitive_bonus.toFixed(1)} AI
               </span>
             )}

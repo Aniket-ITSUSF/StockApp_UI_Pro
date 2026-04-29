@@ -13,8 +13,8 @@ const SENTIMENT_META = {
  * Self-contained sentiment section for EvaluationCard.
  *
  * Props:
- *   ev      — evaluation object (needs cognitive_signal, sentiment_score, etc.)
- *   loading — true while the AI sentiment analysis is still running
+ *   ev      - evaluation object (needs cognitive_signal, sentiment_score, etc.)
+ *   loading - true while the AI sentiment analysis is still running
  */
 export default function SentimentStrip({ ev, loading }) {
   const [showModal, setShowModal] = useState(false);

@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, TrendingDown, Globe, RefreshCw, Zap, AlertCircle, Clock, Newspaper } from 'lucide-react';
+import {
+  TrendingUp, TrendingDown, Globe, RefreshCw, Zap, AlertCircle, Clock,
+  Newspaper, Target, ShieldAlert, CircleDollarSign,
+} from 'lucide-react';
 import { getPreMarketHotlist, runPreMarketAgent } from '../services/api';
+
+const SESSION_LABELS = {
+  pre_market: 'Pre-Market',
+  morning:    'Morning',
+  lunch:      'Lunch',
+  closing:    'Closing',
+};
 
 const CONFIDENCE_META = {
   HIGH:   { cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', dot: 'bg-emerald-400' },
@@ -14,11 +24,26 @@ const MARKET_BADGE = {
   'India-BSE': { label: 'BSE',         cls: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
 };
 
+// ── Outcome badge meta ────────────────────────────────────────────────────────
+const OUTCOME_META = {
+  GREEN: { label: 'Green',   cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+  RED:   { label: 'Red',     cls: 'text-rose-400 bg-rose-500/10 border-rose-500/30'         },
+  FLAT:  { label: 'Flat',    cls: 'text-slate-400 bg-slate-800 border-slate-700'             },
+};
+
+function fmtPrice(value) {
+  if (value == null || Number.isNaN(Number(value))) return null;
+  const n = Number(value);
+  return n >= 1000 ? n.toFixed(0) : n.toFixed(2);
+}
+
 function HotlistCard({ item, onEvaluate }) {
   const [expanded, setExpanded] = useState(false);
   const isBullish   = item.direction === 'BULLISH';
   const confidence  = CONFIDENCE_META[item.confidence] ?? CONFIDENCE_META.LOW;
   const marketBadge = MARKET_BADGE[item.market] ?? MARKET_BADGE['US'];
+  const outcome     = item.outcome ? OUTCOME_META[item.outcome] : null;
+  const hasTradePlan = item.entry_price != null;
 
   return (
     <div className={`bg-slate-900 border rounded-xl p-4 flex flex-col gap-3 transition-colors duration-150 h-full ${
@@ -68,8 +93,8 @@ function HotlistCard({ item, onEvaluate }) {
         )}
       </div>
 
-      {/* Direction badge */}
-      <div className="flex items-center gap-2">
+      {/* Direction badge + outcome chip */}
+      <div className="flex items-center gap-2 flex-wrap">
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
           isBullish
             ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25'
@@ -80,7 +105,41 @@ function HotlistCard({ item, onEvaluate }) {
         {item.rank && (
           <span className="text-[10px] text-slate-600 font-mono">#{item.rank}</span>
         )}
+        {outcome && (
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${outcome.cls}`}>
+            {outcome.label}
+            {item.outcome_pct != null && (
+              <span className="ml-1 tabular-nums opacity-90">
+                {item.outcome_pct >= 0 ? '+' : ''}{Number(item.outcome_pct).toFixed(2)}%
+              </span>
+            )}
+          </span>
+        )}
       </div>
+
+      {/* Trade plan - entry / stop / target (when populated) */}
+      {hasTradePlan && (
+        <div className="grid grid-cols-3 gap-1.5 bg-slate-950 border border-slate-800 rounded-lg p-2">
+          <TradePlanCell
+            icon={CircleDollarSign}
+            label="Entry"
+            value={fmtPrice(item.entry_price)}
+            tone="text-cyan-300 border-cyan-500/20"
+          />
+          <TradePlanCell
+            icon={ShieldAlert}
+            label="Stop"
+            value={fmtPrice(item.stop_price)}
+            tone="text-rose-300 border-rose-500/20"
+          />
+          <TradePlanCell
+            icon={Target}
+            label="Target"
+            value={fmtPrice(item.target_price)}
+            tone="text-emerald-300 border-emerald-500/20"
+          />
+        </div>
+      )}
 
       {/* Catalyst event */}
       {item.catalyst_event && (
@@ -145,6 +204,20 @@ function HotlistCard({ item, onEvaluate }) {
   );
 }
 
+function TradePlanCell({ icon: Icon, label, value, tone }) {
+  return (
+    <div className={`rounded-md border px-2 py-1.5 flex flex-col gap-0.5 ${tone}`}>
+      <span className="text-[9px] uppercase tracking-wider text-slate-600 flex items-center gap-1">
+        <Icon size={9} />
+        {label}
+      </span>
+      <span className={`text-xs font-semibold tabular-nums ${tone.split(' ')[0]}`}>
+        {value ?? '—'}
+      </span>
+    </div>
+  );
+}
+
 function useCountdown(targetIso) {
   const [label, setLabel] = useState('');
   useEffect(() => {
@@ -163,22 +236,29 @@ function useCountdown(targetIso) {
   return label;
 }
 
-export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
+export default function PreMarketRadar({
+  marketSession = 'India',
+  session = 'pre_market',
+  onEvaluateTicker,
+}) {
   const [data,      setData]      = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [running,   setRunning]   = useState(false);
+  const [error,     setError]     = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await getPreMarketHotlist(session);
+      const res = await getPreMarketHotlist(marketSession, session);
       setData(res.data);
-    } catch {
+    } catch (err) {
       setData(null);
+      setError(err);
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [marketSession, session]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -189,7 +269,7 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
   const handleRun = async () => {
     setRunning(true);
     try {
-      await runPreMarketAgent(session);
+      await runPreMarketAgent(marketSession, session);
       await load();
     } catch {
       // silent
@@ -202,11 +282,21 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
   const bullish = hotlist.filter(h => h.direction === 'BULLISH');
   const bearish = hotlist.filter(h => h.direction === 'BEARISH');
 
+  const sessionLabel = SESSION_LABELS[session] ?? session;
+
   if (loading) {
     return (
       <div className="py-12 flex items-center justify-center gap-2 text-slate-600 text-sm">
         <RefreshCw size={14} className="animate-spin" />
-        Loading pre-market intelligence…
+        Loading {sessionLabel.toLowerCase()} intelligence…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-10 flex items-center justify-center text-rose-400 text-xs">
+        Could not load the {sessionLabel.toLowerCase()} hotlist. Please refresh.
       </div>
     );
   }
@@ -219,10 +309,10 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
         <div>
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
             <Globe size={14} className="text-cyan-400" />
-            Pre-Market Intelligence — {session} Session
+            {sessionLabel} Intelligence - {marketSession} Session
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Geopolitical &amp; macro news sweep · Daily hotlist · Expires at market close
+            AI sweep · Hotlist expires at market close
           </p>
           {data?.run_timestamp && (
             <p className="text-[10px] text-slate-700 mt-1 flex items-center gap-1">
@@ -254,7 +344,7 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
           <Clock size={13} className="text-amber-400 shrink-0" />
           <div className="min-w-0">
             <span className="text-xs text-amber-300/80 font-medium">
-              Showing data from a prior session — market has closed.
+              Showing data from a prior session - market has closed.
             </span>
             {nextRunCountdown && (
               <span className="text-xs text-amber-500/70 ml-1.5">
@@ -299,9 +389,9 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
       {hotlist.length === 0 && (
         <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-14 flex flex-col items-center justify-center gap-3">
           <Globe size={28} className="text-slate-700" />
-          <p className="text-sm text-slate-600">No hotlist for today's session yet.</p>
-          <p className="text-xs text-slate-700">
-            Auto-runs at 8:30 AM ET (US) · 8:15 AM IST (India) · or trigger manually above.
+          <p className="text-sm text-slate-600">No {sessionLabel.toLowerCase()} hotlist for today yet.</p>
+          <p className="text-xs text-slate-700 text-center px-4">
+            Auto-runs Mon–Fri during market hours · or trigger manually above.
           </p>
           {import.meta.env.DEV && (
             <button

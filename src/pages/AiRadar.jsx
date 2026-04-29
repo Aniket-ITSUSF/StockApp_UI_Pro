@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Radar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import DiscoveryCard from '../components/DiscoveryCard';
 import { getDiscoveriesPaged } from '../services/api';
@@ -31,7 +32,8 @@ function Pagination({ page, pages, total, onPrev, onNext }) {
   );
 }
 
-export default function AiRadar({ onNavigate }) {
+export default function AiRadar() {
+  const navigate = useNavigate();
   const [discoveries, setDiscoveries] = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [page,        setPage]        = useState(1);
@@ -53,8 +55,8 @@ export default function AiRadar({ onNavigate }) {
 
   useEffect(() => { load(1); }, [load]);
 
-  const handleEvaluate = (_ticker) => {
-    if (onNavigate) onNavigate('dashboard');
+  const handleEvaluate = (ticker) => {
+    navigate(`/analyze?ticker=${encodeURIComponent(ticker)}`);
   };
 
   return (

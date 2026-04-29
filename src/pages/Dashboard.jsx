@@ -1,18 +1,35 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Activity, Radar, Brain, ArrowRight, TrendingUp } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RefreshCw, Activity, Radar, Brain, ArrowRight, TrendingUp, Sparkles } from 'lucide-react';
 import StatsOverview from '../components/StatsOverview';
 import PerformanceChart from '../components/PerformanceChart';
 import EvaluationCard from '../components/EvaluationCard';
 import DiscoveryCard from '../components/DiscoveryCard';
 import HotTradesPanel from '../components/HotTradesPanel';
-import TickerEvaluator from '../components/TickerEvaluator';
 import HorizontalCarousel from '../components/HorizontalCarousel';
-import { getPortfolioSummary, getRecentEvaluations, getRecentDiscoveries, refreshPortfolioPrices, BACKEND_ORIGIN } from '../services/api';
+import {
+  getPortfolioSummary,
+  getRecentEvaluations,
+  getRecentDiscoveries,
+  refreshPortfolioPrices,
+  BACKEND_ORIGIN,
+} from '../services/api';
 import { useBackend } from '../context/BackendContext';
 
-export default function Dashboard({ onNavigate, externalPrefilledTicker, onExternalPrefilledConsumed }) {
+/**
+ * Home (Dashboard) - at-a-glance command center.
+ *
+ * As of Phase 8a, the live evaluation panel was moved to the dedicated
+ * `/analyze` page. This view focuses on:
+ *   - Portfolio stats + performance chart
+ *   - Hot Trades panel (today's actionable picks)
+ *   - AI Radar carousel (top 10 discoveries)
+ *   - Recent Intelligence carousel
+ *   - A "Analyze with AI" CTA button that routes to /analyze
+ */
+export default function Dashboard() {
+  const navigate = useNavigate();
   const { status: backendStatus, retry: retryConnection } = useBackend();
-  const evaluatorRef = useRef(null);
 
   const [portfolio,           setPortfolio]           = useState(null);
   const [evaluations,         setEvaluations]         = useState([]);
@@ -23,7 +40,6 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
   const [refreshingPrices,    setRefreshingPrices]    = useState(false);
   const [error,               setError]               = useState(null);
   const [lastUpdated,         setLastUpdated]         = useState(null);
-  const [prefilledTicker,     setPrefilledTicker]     = useState('');
 
   const fetchPortfolio = useCallback(async () => {
     setLoadingPortfolio(true);
@@ -33,7 +49,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
     } catch (err) {
       setError(
         err.response?.data?.detail ??
-        `Cannot reach backend at ${BACKEND_ORIGIN} — check that the server is running and CORS is configured.`
+        `Cannot reach backend at ${BACKEND_ORIGIN} - check that the server is running and CORS is configured.`,
       );
     } finally {
       setLoadingPortfolio(false);
@@ -45,9 +61,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
     try {
       const res = await getRecentEvaluations();
       setEvaluations(res.data);
-    } catch {
-      /* non-fatal — carousel shows empty state */
-    } finally {
+    } catch { /* non-fatal */ } finally {
       setLoadingEvaluations(false);
     }
   }, []);
@@ -57,9 +71,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
     try {
       const res = await getRecentDiscoveries();
       setDiscoveries(res.data?.discoveries ?? []);
-    } catch {
-      /* non-fatal — carousel shows empty state */
-    } finally {
+    } catch { /* non-fatal */ } finally {
       setLoadingDiscoveries(false);
     }
   }, []);
@@ -70,9 +82,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
       await refreshPortfolioPrices();
       await fetchPortfolio();
       setLastUpdated(new Date());
-    } catch {
-      /* silent — prices stay stale */
-    } finally {
+    } catch { /* silent */ } finally {
       setRefreshingPrices(false);
     }
   }, [fetchPortfolio]);
@@ -93,35 +103,10 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
     return () => clearInterval(id);
   }, [fetchPortfolio, fetchEvaluations, fetchDiscoveries]);
 
-  // Silent background price poll — every 5 min, no loading state, no user signal
-  useEffect(() => {
-    const id = setInterval(async () => {
-      try {
-        const res = await getPortfolioSummary();
-        setPortfolio(res.data);
-      } catch {
-        // silent — stale data stays until next successful poll
-      }
-    }, 5 * 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  const handleNewEvaluation = (data) => {
-    setEvaluations((prev) => [{ ...data, id: Date.now() }, ...prev.slice(0, 19)]);
+  const goAnalyze = (ticker) => {
+    if (ticker) navigate(`/analyze?ticker=${encodeURIComponent(ticker)}`);
+    else navigate('/analyze');
   };
-
-  const handleDiscoveryEvaluate = (ticker) => {
-    setPrefilledTicker(ticker);
-    evaluatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  // Accept cross-page evaluate (Pre-Market, Hot Trades, etc.) via App-level state
-  useEffect(() => {
-    if (!externalPrefilledTicker) return;
-    setPrefilledTicker(externalPrefilledTicker);
-    evaluatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (onExternalPrefilledConsumed) onExternalPrefilledConsumed();
-  }, [externalPrefilledTicker]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const executedCount  = evaluations.filter(e => e.action_taken === 'EXECUTED').length;
   const rejectedCount  = evaluations.length - executedCount;
@@ -146,6 +131,13 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => goAnalyze()}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-950 bg-gradient-to-r from-emerald-400 to-emerald-300 hover:from-emerald-300 hover:to-emerald-200 rounded-lg px-3 py-2 transition-colors shadow-sm shadow-emerald-500/30"
+          >
+            <Sparkles size={13} />
+            Analyze with AI
+          </button>
           {hitRate !== null && (
             <div className="text-xs text-slate-500 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 tabular-nums">
               <span className="text-emerald-400 font-bold">{hitRate}%</span> hit rate
@@ -182,7 +174,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
             <span className="text-sm text-rose-400">⚠ {error}</span>
             {backendStatus === 'connected' && (
               <span className="text-xs text-slate-500">
-                Health check passed — this may be a CORS or database issue. Check Railway logs.
+                Health check passed - this may be a CORS or database issue. Check Railway logs.
               </span>
             )}
             {backendStatus === 'disconnected' && (
@@ -204,43 +196,30 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
       {/* ── Stats overview ────────────────────────────────── */}
       <StatsOverview portfolio={portfolio} />
 
-      {/* ── Mid row: chart + evaluator ────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
-          <PerformanceChart evaluations={evaluations} />
-        </div>
-        <div ref={evaluatorRef} className="lg:col-span-2">
-          <TickerEvaluator
-            onNewEvaluation={handleNewEvaluation}
-            prefilledTicker={prefilledTicker}
-            onPrefilledConsumed={() => setPrefilledTicker('')}
-          />
-        </div>
-      </div>
+      {/* ── Performance chart (full width now that evaluator moved out) ── */}
+      <PerformanceChart evaluations={evaluations} />
 
-      {/* ── Hot Trades — self-contained panel ─────────────────────── */}
-      <HotTradesPanel onEvaluate={handleDiscoveryEvaluate} onNavigate={onNavigate} />
+      {/* ── Hot Trades - self-contained panel ─────────────────────── */}
+      <HotTradesPanel onEvaluate={goAnalyze} onNavigate={() => navigate('/today')} />
 
-      {/* ── AI Radar — top-10 carousel ─────────────────────── */}
+      {/* ── AI Radar - top-10 carousel ─────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
               <Radar size={14} className="text-purple-400" />
-              AI Radar — Discovered Opportunities
+              Discovery - AI-surfaced opportunities
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Second-order beneficiaries surfaced by the Discovery Agent
             </p>
           </div>
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('ai-radar')}
-              className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              View All <ArrowRight size={11} />
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/discovery')}
+            className="flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+          >
+            View All <ArrowRight size={11} />
+          </button>
         </div>
 
         {loadingDiscoveries ? (
@@ -253,7 +232,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
           <HorizontalCarousel
             items={discoveries.slice(0, 10)}
             renderItem={(disc) => (
-              <DiscoveryCard disc={disc} onEvaluate={handleDiscoveryEvaluate} />
+              <DiscoveryCard disc={disc} onEvaluate={goAnalyze} />
             )}
             emptyNode={
               <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-10 flex flex-col items-center justify-center gap-2">
@@ -266,26 +245,24 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
         )}
       </div>
 
-      {/* ── Recent Intelligence — top-10 carousel ─────────── */}
+      {/* ── Recent Intelligence - top-10 carousel ─────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
               <Brain size={14} className="text-emerald-400" />
-              Recent Intelligence
+              Recent History
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Latest committee evaluations — showing top 10
+              Latest committee evaluations - showing top 10
             </p>
           </div>
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate('intelligence')}
-              className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-            >
-              View All <ArrowRight size={11} />
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/history')}
+            className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+          >
+            View All <ArrowRight size={11} />
+          </button>
         </div>
 
         {loadingEvaluations ? (
@@ -301,7 +278,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
             emptyNode={
               <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-20 flex flex-col items-center justify-center gap-2">
                 <Activity size={28} className="text-slate-700" />
-                <p className="text-sm text-slate-600">No evaluations yet. Enter a ticker above to begin.</p>
+                <p className="text-sm text-slate-600">No evaluations yet. Try Analyze with AI to begin.</p>
               </div>
             }
           />

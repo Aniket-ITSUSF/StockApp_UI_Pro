@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Flame, ArrowRight, Clock, Sparkles } from 'lucide-react';
 import HotTradesTile from './HotTradesTile';
 import { useHotTradesFastEval } from '../hooks/useHotTradesFastEval';
+import { US_ENABLED } from '../utils/launch';
+
+const SESSIONS = US_ENABLED ? ['India', 'US'] : ['India'];
 
 function useNextRunCountdown(nextRunIso) {
   const [label, setLabel] = useState('');
@@ -22,7 +25,7 @@ function useNextRunCountdown(nextRunIso) {
 }
 
 export default function HotTradesPanel({ onEvaluate, onNavigate }) {
-  const [session, setSession] = useState('US');
+  const [session, setSession] = useState(SESSIONS[0]);
   const { items, meta, loading } = useHotTradesFastEval(session);
 
   const sessionActive  = meta?.session_active ?? false;
@@ -63,7 +66,7 @@ export default function HotTradesPanel({ onEvaluate, onNavigate }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {['US', 'India'].map((s) => (
+          {SESSIONS.length > 1 && SESSIONS.map((s) => (
             <button
               key={s}
               onClick={() => setSession(s)}
@@ -92,7 +95,7 @@ export default function HotTradesPanel({ onEvaluate, onNavigate }) {
         <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2 mb-3">
           <Clock size={11} className="text-amber-400 shrink-0" />
           <span className="text-[11px] text-amber-300/80">
-            Showing prior session data — market has closed.
+            Showing prior session data - market has closed.
             {nextRunCountdown && (
               <span className="text-amber-500/70 ml-1">
                 Fresh data in <span className="font-semibold text-amber-400">{nextRunCountdown}</span>.

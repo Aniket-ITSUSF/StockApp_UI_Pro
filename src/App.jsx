@@ -1,5 +1,12 @@
-import { useState, Component } from 'react';
-import Sidebar, { MobileNav } from './components/Sidebar';
+import { Component } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+
+import Layout from './components/Layout';
+import AuthGate from './components/AuthGate';
+import HomeRedirect from './components/HomeRedirect';
+
+import Analyze from './pages/Analyze';
 import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
 import ShadowLab from './pages/ShadowLab';
@@ -7,7 +14,13 @@ import Settings from './pages/Settings';
 import AiRadar from './pages/AiRadar';
 import PreMarket from './pages/PreMarket';
 import RecentIntelligence from './pages/RecentIntelligence';
+import Pricing from './pages/Pricing';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+
 import { BackendProvider } from './context/BackendContext';
+import { AuthProvider } from './context/AuthContext';
+import { queryClient } from './services/queryClient';
 import './App.css';
 
 class ErrorBoundary extends Component {
@@ -35,57 +48,53 @@ class ErrorBoundary extends Component {
   }
 }
 
-const PAGES = {
-  dashboard:     Dashboard,
-  portfolio:     Portfolio,
-  'shadow-lab':  ShadowLab,
-  'ai-radar':    AiRadar,
-  'pre-market':  PreMarket,
-  intelligence:  RecentIntelligence,
-  settings:      Settings,
-};
-
+/**
+ * Root of the SPA.
+ *
+ * Auth + data caching providers wrap a BrowserRouter. Public routes
+ * (/sign-in, /sign-up) render full-screen; everything else mounts under
+ * <Layout> which provides the persistent sidebar + AuthGate.
+ *
+ * After login the user lands on `/analyze` (configured in HomeRedirect and
+ * the `from` param honoured by SignIn).
+ */
 export default function App() {
-  const [page,            setPage]            = useState('dashboard');
-  const [hotTicker,       setHotTicker]       = useState('');
-
-  const handleEvaluateTicker = (ticker) => {
-    setHotTicker(ticker);
-    setPage('dashboard');
-  };
-
-  const renderPage = () => {
-    switch (page) {
-      case 'dashboard':
-        return (
-          <Dashboard
-            onNavigate={setPage}
-            externalPrefilledTicker={hotTicker}
-            onExternalPrefilledConsumed={() => setHotTicker('')}
-          />
-        );
-      case 'pre-market':
-        return <PreMarket onNavigate={setPage} onEvaluateTicker={handleEvaluateTicker} />;
-      default: {
-        const Page = PAGES[page] ?? Dashboard;
-        return <Page onNavigate={setPage} />;
-      }
-    }
-  };
-
   return (
     <ErrorBoundary>
-      <BackendProvider>
-        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#020617', color: '#e2e8f0' }}>
-          <Sidebar currentPage={page} onNavigate={setPage} />
-          <main style={{ flex: 1, overflowY: 'auto' }} className="pb-16 md:pb-0">
-            <ErrorBoundary>
-              {renderPage()}
-            </ErrorBoundary>
-          </main>
-          <MobileNav currentPage={page} onNavigate={setPage} />
-        </div>
-      </BackendProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <BackendProvider>
+              <Routes>
+                {/* Public auth routes */}
+                <Route path="/sign-in" element={<SignIn />} />
+                <Route path="/sign-up" element={<SignUp />} />
+
+                {/* Public-but-shell routes - anyone can browse Analyze and Plans;
+                    the page itself shows a "Sign in to analyze" CTA for guests. */}
+                <Route element={<Layout />}>
+                  <Route index element={<HomeRedirect />} />
+                  <Route path="analyze" element={<Analyze />} />
+                  <Route path="plans"   element={<Pricing />} />
+                </Route>
+
+                {/* Auth-gated routes - wrapped in AuthGate which redirects to /sign-in
+                    while preserving the originally-requested URL. */}
+                <Route element={<AuthGate><Layout /></AuthGate>}>
+                  <Route path="home"      element={<Dashboard />} />
+                  <Route path="holdings"  element={<Portfolio />} />
+                  <Route path="today"     element={<PreMarket />} />
+                  <Route path="discovery" element={<AiRadar />} />
+                  <Route path="history"   element={<RecentIntelligence />} />
+                  <Route path="backtest"  element={<ShadowLab />} />
+                  <Route path="settings"  element={<Settings />} />
+                  <Route path="*"         element={<Navigate to="/analyze" replace />} />
+                </Route>
+              </Routes>
+            </BackendProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }
