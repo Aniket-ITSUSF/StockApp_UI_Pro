@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, TrendingUp, TrendingDown, Minus, ShieldX, Loader2 } from 'lucide-react';
+import { Brain, TrendingUp, TrendingDown, Minus, ShieldX, Loader2, ChevronRight } from 'lucide-react';
 import SentimentModal from './SentimentModal';
 
 const SENTIMENT_META = {
@@ -41,9 +41,9 @@ export default function SentimentStrip({ ev, loading }) {
       {showModal && <SentimentModal ev={ev} onClose={() => setShowModal(false)} />}
       <button
         onClick={() => setShowModal(true)}
-        className="w-full flex items-center justify-between gap-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-lg px-3 py-2 transition-colors group"
+        className="w-full flex items-center justify-between gap-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-purple-500/40 rounded-lg px-3 py-2 transition-colors group"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Brain size={12} className="text-purple-400 shrink-0" />
           <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Sentiment</span>
           <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${m.cls}`}>
@@ -61,7 +61,10 @@ export default function SentimentStrip({ ev, loading }) {
             </span>
           )}
         </div>
-        <span className="text-[10px] text-slate-600 group-hover:text-slate-400 transition-colors">View analysis →</span>
+        <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-purple-200 bg-purple-500/20 group-hover:bg-purple-500/35 border border-purple-400/40 group-hover:border-purple-300/60 rounded-full px-2.5 py-1 shadow-[0_0_12px_-2px] shadow-purple-500/40 group-hover:shadow-purple-400/60 transition-all">
+          View analysis
+          <ChevronRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
+        </span>
       </button>
     </>
   );

@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { Brain, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import EvaluationCard from '../components/EvaluationCard';
+import AdInFeed from '../components/ads/AdInFeed';
 import { getEvaluationsPaged } from '../services/api';
+
+const AD_EVERY = 5;
 
 const PAGE_SIZE = 18;
 
@@ -116,7 +119,14 @@ export default function RecentIntelligence() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {evaluations.map((ev, idx) => (
-            <EvaluationCard key={ev.id ?? idx} evaluation={ev} />
+            <Fragment key={ev.id ?? idx}>
+              <EvaluationCard evaluation={ev} />
+              {(idx + 1) % AD_EVERY === 0 && idx !== evaluations.length - 1 && (
+                <div className="col-span-full">
+                  <AdInFeed minHeight={120} />
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       )}

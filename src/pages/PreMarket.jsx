@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Globe, TrendingUp, TrendingDown } from 'lucide-react';
 import PreMarketRadar from '../components/PreMarketRadar';
+import AdLeaderboard from '../components/ads/AdLeaderboard';
 
 const SESSIONS = [
   { id: 'US',    label: 'US Session',    sublabel: 'NYSE / NASDAQ · 9:30 AM ET',   icon: TrendingUp   },
@@ -76,6 +77,9 @@ export default function PreMarket({ onNavigate, onEvaluateTicker }) {
           );
         })}
       </div>
+
+      {/* Leaderboard between session toggle and radar */}
+      <AdLeaderboard />
 
       {/* Radar component */}
       <PreMarketRadar session={session} onEvaluateTicker={handleEvaluate} />

@@ -7,6 +7,7 @@ import {
   filterOpenMarketTickers,
   marketStatusLabel,
 } from '../utils/marketHours';
+import AdLeaderboard from '../components/ads/AdLeaderboard';
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
@@ -266,6 +267,9 @@ export default function Portfolio() {
           no WebSocket — paper trading does not require sub-minute precision
         </p>
       )}
+
+      {/* Bottom leaderboard */}
+      <AdLeaderboard />
     </div>
   );
 }

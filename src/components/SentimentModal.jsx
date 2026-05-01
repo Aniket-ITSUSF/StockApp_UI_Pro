@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X, Brain, AlertTriangle, ShieldX, TrendingUp, TrendingDown, Minus, ChevronRight } from 'lucide-react';
+import AdInFeed from './ads/AdInFeed';
 
 const SIGNAL_META = {
   BULLISH:   { label: 'Bullish',   cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', Icon: TrendingUp,   bar: 'bg-emerald-500' },
@@ -101,6 +102,9 @@ export default function SentimentModal({ ev, onClose }) {
             </div>
           )}
 
+          {/* Ad slot — between summary and scores */}
+          <AdInFeed minHeight={120} />
+
           {/* Crowd trap warning */}
           {ev.crowd_trap_detected && (
             <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 flex items-start gap-2.5">
@@ -138,6 +142,9 @@ export default function SentimentModal({ ev, onClose }) {
               <p className="text-[10px] text-slate-600 mt-1">Applied to alpha score (±15 max)</p>
             </div>
           </div>
+
+          {/* Ad slot — between scores and decision path */}
+          <AdInFeed minHeight={120} />
 
           {/* Decision path */}
           {Array.isArray(ev.decision_path) && ev.decision_path.length > 0 && (

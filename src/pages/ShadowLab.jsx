@@ -8,6 +8,7 @@ import { filterOpenMarketTickers, getMarketForTicker, isMarketOpen, marketStatus
 import AgentVoteGrid from '../components/AgentVoteGrid';
 import CircularProgress from '../components/CircularProgress';
 import Tooltip from '../components/Tooltip';
+import AdLeaderboard from '../components/ads/AdLeaderboard';
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -407,6 +408,9 @@ export default function ShadowLab() {
           Prices polled from Yahoo Finance every 5 min · market hours only
         </p>
       )}
+
+      {/* Bottom leaderboard */}
+      <AdLeaderboard />
     </div>
   );
 }

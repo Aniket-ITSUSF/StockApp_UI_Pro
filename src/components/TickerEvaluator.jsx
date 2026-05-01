@@ -39,7 +39,7 @@ function mapVotes(d, sym) {
   };
 }
 
-export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPrefilledConsumed }) {
+export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefilledTicker, onPrefilledConsumed }) {
   const [market, setMarket]           = useState(detectMarket);
   const [ticker, setTicker]           = useState('');
   const [loading, setLoading]         = useState(false);
@@ -47,6 +47,11 @@ export default function TickerEvaluator({ onNewEvaluation, prefilledTicker, onPr
   const [result, setResult]           = useState(null);
   const [error, setError]             = useState(null);
   const inputRef = useRef(null);
+
+  // Emit active = (loading OR result present) so parents can adjust layout (e.g. ad slots)
+  useEffect(() => {
+    if (onActiveChange) onActiveChange(Boolean(loading || result));
+  }, [loading, result, onActiveChange]);
 
   // Reset result/error when market changes
   useEffect(() => {

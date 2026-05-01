@@ -7,7 +7,10 @@ import DiscoveryCard from '../components/DiscoveryCard';
 import HotTradesPanel from '../components/HotTradesPanel';
 import TickerEvaluator from '../components/TickerEvaluator';
 import HorizontalCarousel from '../components/HorizontalCarousel';
-import { getPortfolioSummary, getRecentEvaluations, getRecentDiscoveries, refreshPortfolioPrices, BACKEND_ORIGIN } from '../services/api';
+import AdInFeed from '../components/ads/AdInFeed';
+import AdSidebar from '../components/ads/AdSidebar';
+import AdLeaderboard from '../components/ads/AdLeaderboard';
+import { getPortfolioSummary, getRecentEvaluations, getRecentDiscoveries, refreshPortfolioPrices } from '../services/api';
 import { useBackend } from '../context/BackendContext';
 
 export default function Dashboard({ onNavigate, externalPrefilledTicker, onExternalPrefilledConsumed }) {
@@ -24,6 +27,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
   const [error,               setError]               = useState(null);
   const [lastUpdated,         setLastUpdated]         = useState(null);
   const [prefilledTicker,     setPrefilledTicker]     = useState('');
+  const [evaluatorActive,     setEvaluatorActive]     = useState(false);
 
   const fetchPortfolio = useCallback(async () => {
     setLoadingPortfolio(true);
@@ -33,7 +37,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
     } catch (err) {
       setError(
         err.response?.data?.detail ??
-        `Cannot reach backend at ${BACKEND_ORIGIN} — check that the server is running and CORS is configured.`
+        'Our servers are busy right now. Please try again in a moment.'
       );
     } finally {
       setLoadingPortfolio(false);
@@ -142,7 +146,7 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
           <p className="text-xs text-slate-500 mt-0.5">
             {lastUpdated
               ? `Last refreshed ${lastUpdated.toLocaleTimeString()} · auto-refresh every 60s`
-              : 'Connecting to backend…'}
+              : 'Connecting…'}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -180,14 +184,9 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1 min-w-0">
             <span className="text-sm text-rose-400">⚠ {error}</span>
-            {backendStatus === 'connected' && (
-              <span className="text-xs text-slate-500">
-                Health check passed — this may be a CORS or database issue. Check Railway logs.
-              </span>
-            )}
             {backendStatus === 'disconnected' && (
               <span className="text-xs text-slate-500">
-                Backend health check failed. Use the Retry button in the sidebar.
+                Our servers are busy. Try again in a moment.
               </span>
             )}
           </div>
@@ -206,17 +205,30 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
 
       {/* ── Mid row: chart + evaluator ────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 flex flex-col gap-6">
           <PerformanceChart evaluations={evaluations} />
+          {/* Ads under chart appear only when evaluator on the right has content */}
+          {evaluatorActive && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <AdInFeed minHeight={200} />
+              <AdInFeed minHeight={200} />
+            </div>
+          )}
         </div>
-        <div ref={evaluatorRef} className="lg:col-span-2">
+        <div ref={evaluatorRef} className="lg:col-span-2 flex flex-col gap-6">
           <TickerEvaluator
             onNewEvaluation={handleNewEvaluation}
+            onActiveChange={setEvaluatorActive}
             prefilledTicker={prefilledTicker}
             onPrefilledConsumed={() => setPrefilledTicker('')}
           />
+          {/* Ad in right column only when nothing is being evaluated */}
+          {!evaluatorActive && <AdSidebar />}
         </div>
       </div>
+
+      {/* ── Mid-section leaderboard ─────────────────────── */}
+      <AdLeaderboard />
 
       {/* ── Hot Trades — self-contained panel ─────────────────────── */}
       <HotTradesPanel onEvaluate={handleDiscoveryEvaluate} onNavigate={onNavigate} />
@@ -266,6 +278,9 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
         )}
       </div>
 
+      {/* ── Mid-section leaderboard between AI Radar and Recent Intelligence ─── */}
+      <AdLeaderboard />
+
       {/* ── Recent Intelligence — top-10 carousel ─────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -307,6 +322,9 @@ export default function Dashboard({ onNavigate, externalPrefilledTicker, onExter
           />
         )}
       </div>
+
+      {/* ── Bottom leaderboard ─────────────────────────── */}
+      <AdLeaderboard />
     </div>
   );
 }

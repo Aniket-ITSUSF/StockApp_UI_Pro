@@ -8,6 +8,9 @@ import AiRadar from './pages/AiRadar';
 import PreMarket from './pages/PreMarket';
 import RecentIntelligence from './pages/RecentIntelligence';
 import { BackendProvider } from './context/BackendContext';
+import { AdProvider } from './components/ads/AdProvider';
+import AdAnchor from './components/ads/AdAnchor';
+import CookieConsent from './components/CookieConsent';
 import './App.css';
 
 class ErrorBoundary extends Component {
@@ -76,15 +79,19 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BackendProvider>
-        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#020617', color: '#e2e8f0' }}>
-          <Sidebar currentPage={page} onNavigate={setPage} />
-          <main style={{ flex: 1, overflowY: 'auto' }} className="pb-16 md:pb-0">
-            <ErrorBoundary>
-              {renderPage()}
-            </ErrorBoundary>
-          </main>
-          <MobileNav currentPage={page} onNavigate={setPage} />
-        </div>
+        <AdProvider>
+          <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#020617', color: '#e2e8f0' }}>
+            <Sidebar currentPage={page} onNavigate={setPage} />
+            <main style={{ flex: 1, overflowY: 'auto' }} className="pb-16 md:pb-0">
+              <ErrorBoundary>
+                {renderPage()}
+              </ErrorBoundary>
+            </main>
+            <MobileNav currentPage={page} onNavigate={setPage} />
+            <AdAnchor />
+          </div>
+          <CookieConsent />
+        </AdProvider>
       </BackendProvider>
     </ErrorBoundary>
   );

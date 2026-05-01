@@ -1,5 +1,6 @@
 import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Brain, Globe } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
+import AdSidebar from './ads/AdSidebar';
 
 const NAV = [
   { id: 'dashboard',    label: 'Dashboard',     icon: BarChart2    },
@@ -12,10 +13,7 @@ const NAV = [
 ];
 
 function StatusFooter() {
-  const { status, lastChecked, retry, url } = useBackend();
-
-  // Shorten the URL for display: strip protocol + trailing slash
-  const displayUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const { status, lastChecked, retry } = useBackend();
 
   const states = {
     checking: {
@@ -30,7 +28,7 @@ function StatusFooter() {
     },
     disconnected: {
       dot:   'bg-rose-500',
-      label: 'Unreachable',
+      label: 'Servers are busy',
       text:  'text-rose-400',
     },
   };
@@ -46,24 +44,19 @@ function StatusFooter() {
           ? <RefreshCw size={11} className="text-amber-400 animate-spin shrink-0" />
           : <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
         }
-        <div className="flex flex-col min-w-0">
-          <span className={`text-[11px] font-semibold leading-none ${s.text}`}>
-            {s.label}
-          </span>
-          <span className="text-[10px] text-slate-600 truncate mt-0.5" title={url}>
-            {displayUrl}
-          </span>
-        </div>
+        <span className={`text-[11px] font-semibold leading-none ${s.text}`}>
+          {s.label}
+        </span>
       </div>
 
-      {/* Connect button — only shown when disconnected */}
+      {/* Retry button — only shown when servers are busy */}
       {status === 'disconnected' && (
         <button
           onClick={retry}
           className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-[11px] font-semibold transition-colors"
         >
           <WifiOff size={11} />
-          Retry Connection
+          Retry
         </button>
       )}
 
@@ -118,7 +111,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 p-2.5 flex flex-col gap-0.5">
+      <nav className="p-2.5 flex flex-col gap-0.5">
         {NAV.map((item) => {
           const active  = currentPage === item.id;
           const NavIcon = item.icon;
@@ -138,6 +131,12 @@ export default function Sidebar({ currentPage, onNavigate }) {
           );
         })}
       </nav>
+
+      {/* Sidebar ads — fill the empty space between nav and status footer */}
+      <div className="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto">
+        <AdSidebar compact />
+        <AdSidebar compact />
+      </div>
 
       <StatusFooter />
     </aside>

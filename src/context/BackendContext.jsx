@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getHealth, BACKEND_ORIGIN } from '../services/api';
+import { getHealth } from '../services/api';
 
 /**
  * Provides real-time backend connection status to the whole app.
  *
  * status:  'checking' | 'connected' | 'disconnected'
  * retry:   () => void   — call to manually trigger a health check
- * url:     string       — human-readable backend origin for display
+ *
+ * Backend URL is intentionally NOT exposed — never surface infra endpoints to users.
  */
 const BackendContext = createContext(null);
 
@@ -36,7 +37,7 @@ export function BackendProvider({ children }) {
   }, [check]);
 
   return (
-    <BackendContext.Provider value={{ status, lastChecked, retry: check, url: BACKEND_ORIGIN }}>
+    <BackendContext.Provider value={{ status, lastChecked, retry: check }}>
       {children}
     </BackendContext.Provider>
   );

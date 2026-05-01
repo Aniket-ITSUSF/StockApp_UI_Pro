@@ -1,10 +1,7 @@
 import { Settings as SettingsIcon, Info, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
 
-const BACKEND_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
-
 const CONFIG_ROWS = [
-  { label: 'Backend URL',          value: BACKEND_URL },
   { label: 'Consensus Threshold',  value: '65%' },
   { label: 'Trading Mode',         value: 'Paper Trading Only' },
   { label: 'Auto-refresh interval',value: '60 seconds' },
@@ -17,7 +14,7 @@ export default function Settings() {
   const statusMeta = {
     checking:     { Icon: RefreshCw, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Checking…' },
     connected:    { Icon: Wifi,      color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', label: 'Connected' },
-    disconnected: { Icon: WifiOff,   color: 'text-rose-400',   bg: 'bg-rose-500/10 border-rose-500/20',   label: 'Unreachable' },
+    disconnected: { Icon: WifiOff,   color: 'text-rose-400',   bg: 'bg-rose-500/10 border-rose-500/20',   label: 'Servers are busy' },
   }[status];
   const { Icon: StatusIcon } = statusMeta;
 
@@ -43,9 +40,8 @@ export default function Settings() {
           <StatusIcon size={14} className={`shrink-0 ${statusMeta.color} ${status === 'checking' ? 'animate-spin' : ''}`} />
           <div>
             <p className={`text-sm font-semibold ${statusMeta.color}`}>
-              Backend {statusMeta.label}
+              {statusMeta.label}
             </p>
-            <p className="text-xs text-slate-500 mt-0.5 font-mono">{BACKEND_URL}</p>
             {lastChecked && (
               <p className="text-[11px] text-slate-600 mt-0.5">
                 Last checked {lastChecked.toLocaleTimeString()}

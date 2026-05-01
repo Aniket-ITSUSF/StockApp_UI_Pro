@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { Radar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import DiscoveryCard from '../components/DiscoveryCard';
+import AdInFeed from '../components/ads/AdInFeed';
 import { getDiscoveriesPaged } from '../services/api';
+
+const AD_EVERY = 5;
 
 const PAGE_SIZE = 15;
 
@@ -107,12 +110,15 @@ export default function AiRadar({ onNavigate }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {discoveries.map((disc) => (
-            <DiscoveryCard
-              key={disc.id ?? `${disc.primary_ticker}-${disc.ticker}`}
-              disc={disc}
-              onEvaluate={handleEvaluate}
-            />
+          {discoveries.map((disc, idx) => (
+            <Fragment key={disc.id ?? `${disc.primary_ticker}-${disc.ticker}`}>
+              <DiscoveryCard disc={disc} onEvaluate={handleEvaluate} />
+              {(idx + 1) % AD_EVERY === 0 && idx !== discoveries.length - 1 && (
+                <div className="col-span-full">
+                  <AdInFeed minHeight={120} />
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       )}
