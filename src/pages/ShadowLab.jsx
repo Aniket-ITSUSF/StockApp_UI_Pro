@@ -21,7 +21,7 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000;
 // ─── Formatting ───────────────────────────────────────────────────────────────
 
 function fmtPrice(n, ticker) {
-  if (n == null) return '—';
+  if (n == null) return '-';
   const isIndia = getMarketForTicker(ticker) === 'IND';
   return new Intl.NumberFormat(isIndia ? 'en-IN' : 'en-US', {
     style: 'currency',
@@ -56,7 +56,7 @@ const REJECTION_META = {
     bg:    'bg-amber-500/10 border-amber-500/20',
     Icon:  AlertTriangle,
     tip:   'The weekly chart structure was bearish (price below weekly 20 SMA). ' +
-           'The system refuses to buy daily bounces inside weekly downtrends — ' +
+           'The system refuses to buy daily bounces inside weekly downtrends - ' +
            'a critical protection against catching falling knives.',
   },
   REJECTED_RISK: {
@@ -66,7 +66,7 @@ const REJECTION_META = {
     Icon:  BarChart2,
     tip:   'The Risk Management agent calculated that the required stop-loss ' +
            '(1.5× 14-day ATR below entry) would expose more than 8% of capital. ' +
-           'Capital preservation is paramount — the trade was blocked.',
+           'Capital preservation is paramount - the trade was blocked.',
   },
 };
 
@@ -176,7 +176,7 @@ function ShadowCard({ pos, livePrice }) {
             <p className="text-xs text-slate-600 uppercase tracking-wider mb-0.5">Would be worth</p>
             <div className={`flex items-center gap-1 text-sm font-semibold tabular-nums font-mono ${pnlColor}`}>
               <PnlIcon size={13} />
-              {pnl != null ? fmtPrice(Math.abs(pnl), pos.ticker) : '—'}
+              {pnl != null ? fmtPrice(Math.abs(pnl), pos.ticker) : '-'}
             </div>
             {pct != null && (
               <p className={`text-xs ${pnlColor}`}>
@@ -194,7 +194,7 @@ function ShadowCard({ pos, livePrice }) {
               : isLoss
               ? `The system saved you from a loss of ${fmtPrice(Math.abs(pnl), pos.ticker)}. `
               : 'This trade would have been roughly flat. '}
-            Long-term signals did not align — see agent votes below.
+            Long-term signals did not align - see agent votes below.
           </p>
         )}
       </div>
@@ -244,7 +244,7 @@ function ShadowCard({ pos, livePrice }) {
       {/* ── Agent vote grid ────────────────────────────────────────── */}
       <div>
         <p className="text-xs text-slate-600 uppercase tracking-wider font-semibold mb-2">
-          Agent votes at time of evaluation — hover each for explanation
+          Agent votes at time of evaluation - hover each for explanation
         </p>
         <AgentVoteGrid evaluation={pos} />
       </div>
@@ -275,7 +275,7 @@ export default function ShadowLab() {
     loadLocalShadow();
   }, [loadLocalShadow]);
 
-  // Poller — same market-hours logic as Portfolio
+  // Poller - same market-hours logic as Portfolio
   const runPoll = useCallback(async (positions) => {
     if (!positions?.length) return;
     const openTickers = filterOpenMarketTickers(positions.map(p => p.ticker));
@@ -377,7 +377,7 @@ export default function ShadowLab() {
       {/* Info banner */}
       <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 text-xs text-amber-400/80 leading-relaxed">
         These positions were <strong>never executed</strong>. The committee blocked them for the reasons shown below.
-        Track them over time to validate the system's strictness — and tune agent weights in Settings if needed.
+        Track them over time to validate the system's strictness - and tune agent weights in Settings if needed.
       </div>
 
       <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 flex items-start gap-2.5">

@@ -18,21 +18,21 @@ import AdLeaderboard from '../components/ads/AdLeaderboard';
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
 function fmtUSD(n) {
-  if (n == null) return '—';
+  if (n == null) return '-';
   return new Intl.NumberFormat('en-US', {
     style: 'currency', currency: 'USD', minimumFractionDigits: 2,
   }).format(n);
 }
 
 function fmtINR(n) {
-  if (n == null) return '—';
+  if (n == null) return '-';
   return new Intl.NumberFormat('en-IN', {
     style: 'currency', currency: 'INR', minimumFractionDigits: 2,
   }).format(n);
 }
 
 function fmtPrice(n, ticker) {
-  if (n == null) return '—';
+  if (n == null) return '-';
   return getMarketForTicker(ticker) === 'IND' ? fmtINR(n) : fmtUSD(n);
 }
 
@@ -106,7 +106,7 @@ export default function Portfolio() {
   const [data,       setData]       = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
-  // livePrices: { [ticker]: price } — updated by the poller, not stored in DB
+  // livePrices: { [ticker]: price } - updated by the poller, not stored in DB
   const [livePrices, setLivePrices] = useState({});
   const [lastPolled, setLastPolled] = useState(null);
   const [polling,    setPolling]    = useState(false);
@@ -131,7 +131,7 @@ export default function Portfolio() {
     const allTickers     = positions.map((p) => p.ticker);
     const openTickers    = filterOpenMarketTickers(allTickers);
 
-    if (openTickers.length === 0) return; // all markets closed — skip
+    if (openTickers.length === 0) return; // all markets closed - skip
 
     setPolling(true);
     try {
@@ -296,7 +296,7 @@ export default function Portfolio() {
       {positions.length > 0 && (
         <p className="text-xs text-slate-600 text-right">
           Prices polled from Yahoo Finance every 5 min · market hours only ·
-          no WebSocket — paper trading does not require sub-minute precision
+          no WebSocket - paper trading does not require sub-minute precision
         </p>
       )}
 

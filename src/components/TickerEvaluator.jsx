@@ -50,6 +50,9 @@ function mapVotes(d, sym) {
     support_vote:           d.votes?.find(v => v.agent_name === 'support_resistance')?.vote,
     relative_strength_vote: d.votes?.find(v => v.agent_name === 'relative_strength')?.vote,
     complex_pullback_vote:  d.votes?.find(v => v.agent_name === 'complex_pullback')?.vote,
+    volume_profile_vote:    d.votes?.find(v => v.agent_name === 'volume_profile')?.vote ?? d.volume_profile_vote,
+    volume_profile_reasoning: d.votes?.find(v => v.agent_name === 'volume_profile')?.reasoning,
+    volume_profile:         d.volume_profile ?? null,
     stat_arb_vote:          statArbVote,
     failure_test_vote:      failureTestVote,
     final_alpha_score:      d.final_weighted_alpha_score ?? d.weighted_alpha_score,
@@ -246,7 +249,7 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
       {loading && (
         <div className="flex items-center gap-3 text-xs text-slate-500 bg-slate-950 border border-slate-800 rounded-lg px-3 py-3">
           <Loader2 size={14} className="animate-spin text-emerald-400" />
-          Fetching market data and running 10-agent committee…
+          Fetching market data and running 11-agent committee…
         </div>
       )}
 

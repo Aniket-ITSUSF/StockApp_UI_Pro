@@ -3,7 +3,7 @@ import axios from 'axios';
 // Vite bakes this in at build time. Set VITE_API_URL in your deployment platform.
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
 
-// Health endpoint lives at the root — strip /api suffix
+// Health endpoint lives at the root - strip /api suffix
 export const HEALTH_URL = BASE_URL.replace(/\/api\/?$/, '') + '/health';
 
 // Human-readable backend origin for display in error messages

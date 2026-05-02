@@ -43,12 +43,12 @@ export default function AdUnit({
       (window.adsbygoogle = window.adsbygoogle || []).push({});
       pushedRef.current = true;
     } catch {
-      // AdSense push errors are non-fatal — slot stays empty
+      // AdSense push errors are non-fatal - slot stays empty
     }
   }, [visible, slot, consentChosen]);
 
   if (!adsEnabled || !consentChosen) return null;
-  // In production, a missing slot ID means the slot hasn't been created in AdSense yet — render nothing.
+  // In production, a missing slot ID means the slot hasn't been created in AdSense yet - render nothing.
   if (!import.meta.env.DEV && !slot) return null;
 
   const wrapStyle = { minHeight, width: '100%', ...style };

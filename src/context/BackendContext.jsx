@@ -5,9 +5,9 @@ import { getHealth } from '../services/api';
  * Provides real-time backend connection status to the whole app.
  *
  * status:  'checking' | 'connected' | 'disconnected'
- * retry:   () => void   — call to manually trigger a health check
+ * retry:   () => void   - call to manually trigger a health check
  *
- * Backend URL is intentionally NOT exposed — never surface infra endpoints to users.
+ * Backend URL is intentionally NOT exposed - never surface infra endpoints to users.
  */
 const BackendContext = createContext(null);
 

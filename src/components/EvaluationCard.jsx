@@ -11,12 +11,12 @@ const ACTION_BADGE = {
   EXECUTED: {
     text: 'EXECUTED',
     cls:  'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-    tip:  'All 10 agents voted, every risk gate was cleared, and the score beat the threshold. This trade is saved only in your private browser portfolio.',
+    tip:  'All math agents voted, every risk gate was cleared, and the score beat the threshold. This trade is saved only in your private browser portfolio.',
   },
   REJECTED_CONSENSUS: {
     text: 'REJECTED',
     cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
-    tip:  'The combined agent score was too low to proceed. Not enough agents agreed on a buy signal — the stock was rejected before the AI news analysis even ran.',
+    tip:  'The combined agent score was too low to proceed. Not enough agents agreed on a buy signal - the stock was rejected before the AI news analysis even ran.',
   },
   REJECTED_CONSENSUS_REGIME: {
     text: 'REGIME BLOCK',
@@ -26,12 +26,12 @@ const ACTION_BADGE = {
   REJECTED_RISK: {
     text: 'RISK BLOCK',
     cls:  'bg-rose-500/10 text-rose-400 border-rose-500/25',
-    tip:  'The stock was too volatile to trade safely. The nearest logical stop-loss would have risked more than 8% of capital — the Risk Manager blocked it.',
+    tip:  'The stock was too volatile to trade safely. The nearest logical stop-loss would have risked more than 8% of capital - the Risk Manager blocked it.',
   },
   REJECTED_MTF: {
     text: 'MTF BLOCK',
     cls:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
-    tip:  'The weekly trend was bearish. Even though the daily chart looked interesting, the price was below its weekly moving average — buying here would mean swimming against the bigger tide.',
+    tip:  'The weekly trend was bearish. Even though the daily chart looked interesting, the price was below its weekly moving average - buying here would mean swimming against the bigger tide.',
   },
   // ── Cognitive-wing actions ────────────────────────────────────────────────
   BUY: {
@@ -42,17 +42,17 @@ const ACTION_BADGE = {
   HOLD: {
     text: 'HOLD',
     cls:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
-    tip:  'The committee watched but didn\'t act. All risk gates were cleared but the final score — after the AI news adjustment — still fell short of the buy threshold.',
+    tip:  'The committee watched but didn\'t act. All risk gates were cleared but the final score - after the AI news adjustment - still fell short of the buy threshold.',
   },
   REJECTED_COGNITIVE: {
     text: 'COGNITIVE VETO',
     cls:  'bg-purple-500/10 text-purple-400 border-purple-500/25',
-    tip:  'The AI news analyst found a verified, serious negative fact — such as a fraud filing, earnings collapse, or regulatory action. The system issued a hard block regardless of the technical score.',
+    tip:  'The AI news analyst found a verified, serious negative fact - such as a fraud filing, earnings collapse, or regulatory action. The system issued a hard block regardless of the technical score.',
   },
   ANALYZING: {
     text: 'ANALYZING',
     cls:  'bg-purple-500/10 text-purple-300 border-purple-500/25',
-    tip:  'Math calculations are complete. The AI committee is now reading the news and computing sentiment — the final verdict is moments away.',
+    tip:  'Math calculations are complete. The AI committee is now reading the news and computing sentiment - the final verdict is moments away.',
   },
 };
 
@@ -103,6 +103,91 @@ function fmtDisplayPrice(value, ticker) {
   return `${symbol}${fmtPrice(value)}`;
 }
 
+/**
+ * Volume read with plain plus technical labels (VWAP, VPOC). Logic matches VolumeProfileAgent.
+ */
+function buildVolumeAnalysisNarrative(profile, ticker) {
+  const p = Number(profile.price);
+  const vwap = Number(profile.vwap);
+  const vpoc = Number(profile.vpoc);
+  if (![p, vwap, vpoc].every((n) => Number.isFinite(n))) {
+    return {
+      tone: 'neutral',
+      lead: 'No read yet.',
+      body: 'We could not load volume data for this stock. Try again in a moment.',
+    };
+  }
+
+  const priceStr = fmtDisplayPrice(p, ticker);
+  const vwapStr = fmtDisplayPrice(vwap, ticker);
+  const vpocStr = fmtDisplayPrice(vpoc, ticker);
+  const moreSharesThanUsual = Boolean(profile.volume_inclining);
+
+  const volNote = moreSharesThanUsual
+    ? ' Current volume is above its short-term average (5-period volume SMA), which adds confirmation.'
+    : ' Current volume is below its short-term average (5-period volume SMA), which weakens confirmation.';
+
+  const aboveBoth = p > vwap && p > vpoc;
+  const belowBoth = p < vwap && p < vpoc;
+  const belowAvgAboveBusy = p < vwap && p > vpoc;
+  const aboveAvgBelowBusy = p > vwap && p < vpoc;
+
+  if (aboveBoth && moreSharesThanUsual) {
+    return {
+      tone: 'bull',
+      lead: 'BUY.',
+      body:
+        `Price is ${priceStr}. Volume Weighted Average Price (VWAP) is ${vwapStr}. VWAP is the average fill price over the window, weighted by how many shares traded at each price, which shows where the market balanced. Price above VWAP points to buyers paying up. Volume Point of Control (VPOC) is ${vpocStr}, the price where the most volume accumulated in our profile. Price above VPOC suggests that heavy area may now act as support. ${volNote.trim()}`,
+    };
+  }
+
+  if (aboveBoth && !moreSharesThanUsual) {
+    return {
+      tone: 'hold',
+      lead: 'HOLD.',
+      body:
+        `Price is ${priceStr}. VWAP is ${vwapStr} and VPOC is ${vpocStr}, and price is above both. That placement usually favors bulls, but volume is soft. Without heavier volume, the market can give back a VWAP or VPOC breakout quickly. ${volNote.trim()}`,
+    };
+  }
+
+  if (belowBoth) {
+    const extra = moreSharesThanUsual
+      ? ' Volume is elevated while price is under both VWAP and VPOC, so resolve the weakness carefully.'
+      : volNote.trim();
+    return {
+      tone: 'bear',
+      lead: 'SELL.',
+      body:
+        `Price is ${priceStr}. Volume Weighted Average Price (VWAP) is ${vwapStr}. Price below VWAP says sellers are more aggressive on average for this sample. Volume Point of Control (VPOC) is ${vpocStr}. Price below VPOC says we are under the heaviest volume shelf, where trapped longs may sell rallies. ${extra}`,
+    };
+  }
+
+  if (belowAvgAboveBusy) {
+    return {
+      tone: 'hold',
+      lead: 'HOLD.',
+      body:
+        `Price is ${priceStr}. VWAP is ${vwapStr} and price is below it, so the volume-weighted tape still leans cautious. VPOC is ${vpocStr} and price is above it, so we have not lost the busiest price level yet. This split between VWAP and VPOC is a mixed tape, not a clean risk-on or risk-off signal. ${volNote.trim()}`,
+    };
+  }
+
+  if (aboveAvgBelowBusy) {
+    return {
+      tone: 'hold',
+      lead: 'HOLD.',
+      body:
+        `Price is ${priceStr}. VWAP is ${vwapStr} and price is above it, which helps the bull case on a volume basis. VPOC is ${vpocStr} and price is still under it, and VPOC is where the biggest volume cluster lives. Until price clears VPOC with follow-through, expect chop around that wall. ${volNote.trim()}`,
+    };
+  }
+
+  return {
+    tone: 'hold',
+    lead: 'HOLD.',
+    body:
+      `Price is ${priceStr}. VWAP is ${vwapStr} and VPOC is ${vpocStr}. Price is not giving a clean breakout or breakdown versus both anchors yet, so wait for price to pick a side with volume. ${volNote.trim()}`,
+  };
+}
+
 function OracleCones({ oracle }) {
   const frames = getOracleFrames(oracle);
   if (!frames.length) return null;
@@ -149,6 +234,50 @@ function OracleCones({ oracle }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function VolumeAnalysisStrip({ profile, ticker }) {
+  if (!profile) return null;
+
+  const { tone, lead, body } = buildVolumeAnalysisNarrative(profile, ticker);
+  const leadCls =
+    tone === 'bull'
+      ? 'text-emerald-300'
+      : tone === 'bear'
+        ? 'text-rose-300'
+        : tone === 'neutral'
+          ? 'text-slate-400'
+          : 'text-amber-200';
+
+  const tip = (
+    <div className="flex flex-col gap-1.5 text-xs text-slate-300">
+      <p className="font-semibold text-slate-100">Terms</p>
+      <p>
+        <span className="text-cyan-200 font-semibold">VWAP</span> (Volume Weighted Average Price): average trade price weighted by volume on recent 5-minute bars.
+      </p>
+      <p>
+        <span className="text-cyan-200 font-semibold">VPOC</span> (Volume Point of Control): the price where the most shares traded in our sliced profile (50 equal price bins over the window).
+      </p>
+      <p className="text-slate-500">Matches the Volume Profile agent on the backend.</p>
+    </div>
+  );
+
+  return (
+    <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2">
+      <div className="flex flex-col min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between gap-1.5 mb-2">
+        <Tooltip content={tip} width={280} position="bottom">
+          <span className="cursor-default text-xs font-semibold text-cyan-300 border-b border-dotted border-cyan-500/40">
+            Volume Analysis:
+          </span>
+        </Tooltip>
+        <span className="text-xs text-slate-500">10 trading days · 5-minute bars</span>
+      </div>
+      <p className="text-sm text-slate-300 leading-relaxed">
+        <span className={`font-semibold ${leadCls}`}>{lead}</span>{' '}
+        {body}
+      </p>
     </div>
   );
 }
@@ -254,6 +383,9 @@ export default function EvaluationCard({ evaluation: ev, sentimentLoading = fals
 
       {/* Options oracle prediction cones */}
       <OracleCones oracle={oracle} />
+
+      {/* Volume analysis (plain English) */}
+      <VolumeAnalysisStrip profile={ev.volume_profile} ticker={ev.ticker} />
 
       {/* Sentiment strip */}
       <SentimentStrip ev={ev} loading={sentimentLoading} />

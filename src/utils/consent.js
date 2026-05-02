@@ -18,7 +18,7 @@ export function writeConsent(choice) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ choice, ts: Date.now() }));
   } catch {
-    // private mode or storage disabled — fall back to in-memory only
+    // private mode or storage disabled - fall back to in-memory only
   }
 }
 

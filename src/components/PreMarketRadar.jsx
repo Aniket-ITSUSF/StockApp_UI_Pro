@@ -223,7 +223,7 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
         <div>
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
             <Globe size={14} className="text-cyan-400" />
-            Intraday's Play — {session} Session
+            Intraday's Play - {session} Session
           </h2>
           <p className="text-sm text-slate-500 mt-0.5">
             Geopolitical &amp; macro news sweep · Daily hotlist · Expires at market close
@@ -258,7 +258,7 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
           <Clock size={13} className="text-amber-400 shrink-0" />
           <div className="min-w-0">
             <span className="text-xs text-amber-300/80 font-medium">
-              Showing data from a prior session — market has closed.
+              Showing data from a prior session - market has closed.
             </span>
             {nextRunCountdown && (
               <span className="text-xs text-amber-500/70 ml-1.5">

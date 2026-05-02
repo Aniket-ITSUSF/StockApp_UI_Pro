@@ -80,7 +80,7 @@ export default function HotTradesTile({ item, onEvaluate }) {
       {/* Split: left = indicators, right = circular alpha */}
       <div className="flex items-center gap-2">
 
-        {/* Left — direction + confidence + expected move */}
+        {/* Left - direction + confidence + expected move */}
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <span className={`self-start text-xs font-bold px-1.5 py-0.5 rounded-full border ${
             isBullish
@@ -111,7 +111,7 @@ export default function HotTradesTile({ item, onEvaluate }) {
           )}
         </div>
 
-        {/* Right — circular alpha score */}
+        {/* Right - circular alpha score */}
         <div className="shrink-0">
           <CircularProgress score={score ?? 0} size={52} />
         </div>

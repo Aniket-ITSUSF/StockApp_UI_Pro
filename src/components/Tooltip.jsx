@@ -1,11 +1,11 @@
 /**
- * Tooltip — renders via position:fixed so it escapes all overflow:hidden parents.
+ * Tooltip - renders via position:fixed so it escapes all overflow:hidden parents.
  *
  * Props:
- *   content  — string or JSX
- *   position — 'top' (default) | 'bottom'
- *   width    — pixel width of the bubble (default 208 ≈ w-52)
- *   align    — 'center' (default) | 'left' | 'right'
+ *   content  - string or JSX
+ *   position - 'top' (default) | 'bottom'
+ *   width    - pixel width of the bubble (default 208 ≈ w-52)
+ *   align    - 'center' (default) | 'left' | 'right'
  */
 import { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';

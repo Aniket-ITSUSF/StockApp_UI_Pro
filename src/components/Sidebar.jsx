@@ -55,7 +55,7 @@ function StatusFooter() {
         </span>
       </div>
 
-      {/* Retry button — only shown when servers are busy */}
+      {/* Retry button - only shown when servers are busy */}
       {status === 'disconnected' && (
         <button
           onClick={retry}
@@ -136,7 +136,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Sidebar ads — fill the empty space between nav and status footer */}
+      {/* Sidebar ads - fill the empty space between nav and status footer */}
       <div className="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto">
         <AdSidebar compact />
         <AdSidebar compact />

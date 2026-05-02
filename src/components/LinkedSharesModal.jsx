@@ -35,7 +35,7 @@ export default function LinkedSharesModal({ ev, linkedShares, onClose }) {
           <div className="flex items-center gap-2.5">
             <GitBranch size={16} className="text-cyan-400" />
             <span className="text-sm font-bold text-slate-100">
-              Linked Shares — <span className="font-mono tracking-widest text-cyan-300">{ev?.ticker}</span>
+              Linked Shares - <span className="font-mono tracking-widest text-cyan-300">{ev?.ticker}</span>
             </span>
           </div>
           <button

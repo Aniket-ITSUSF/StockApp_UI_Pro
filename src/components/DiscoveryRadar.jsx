@@ -15,7 +15,7 @@ export default function DiscoveryRadar({ onEvaluateTicker }) {
       const res = await getRecentDiscoveries();
       setDiscoveries(res.data?.discoveries ?? []);
     } catch {
-      // silent — section just stays empty
+      // silent - section just stays empty
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -38,7 +38,7 @@ export default function DiscoveryRadar({ onEvaluateTicker }) {
       <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-12 flex flex-col items-center justify-center gap-2">
         <Radar size={28} className="text-slate-700" />
         <p className="text-sm text-slate-600">No discoveries yet.</p>
-        <p className="text-xs text-slate-700">Evaluate a few tickers — the AI will surface second-order opportunities here.</p>
+        <p className="text-xs text-slate-700">Evaluate a few tickers - the AI will surface second-order opportunities here.</p>
       </div>
     );
   }
@@ -49,7 +49,7 @@ export default function DiscoveryRadar({ onEvaluateTicker }) {
         <div>
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
             <Radar size={14} className="text-purple-400" />
-            AI Radar — Discovered Opportunities
+            AI Radar - Discovered Opportunities
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Second-order beneficiaries surfaced by the Discovery Agent while the crowd was looking elsewhere

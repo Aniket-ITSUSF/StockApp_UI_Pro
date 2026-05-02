@@ -95,7 +95,7 @@ export default function HotTradesPanel({ onEvaluate, onNavigate }) {
         <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2 mb-3">
           <Clock size={11} className="text-amber-400 shrink-0" />
           <span className="text-xs text-amber-300/80">
-            Showing prior session data — market has closed.
+            Showing prior session data - market has closed.
             {nextRunCountdown && (
               <span className="text-amber-500/70 ml-1">
                 Fresh data in <span className="font-semibold text-amber-400">{nextRunCountdown}</span>.

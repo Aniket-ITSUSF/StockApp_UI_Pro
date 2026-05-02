@@ -34,6 +34,12 @@ export const AGENTS = [
     tip:   'Looks for a cleaner dip-buying setup. It waits for the stock to pull back in a more stable pattern before calling it attractive.',
   },
   {
+    key:   'volume_profile_vote',
+    label: 'VP',
+    name:  'Volume Profile / VWAP',
+    tip:   'Maps 10 days of 5-minute volume by price. A BUY means price is above VWAP and the main VPOC wall with volume expanding.',
+  },
+  {
     key:   'stat_arb_vote',
     label: 'SA',
     name:  'Statistical Arb',

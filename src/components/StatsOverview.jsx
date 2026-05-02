@@ -1,14 +1,14 @@
 import { DollarSign, TrendingUp, TrendingDown, Layers } from 'lucide-react';
 
 function fmt(n) {
-  if (n == null) return '—';
+  if (n == null) return '-';
   return new Intl.NumberFormat('en-US', {
     style: 'currency', currency: 'USD', maximumFractionDigits: 0,
   }).format(n);
 }
 
 function fmtPct(n) {
-  if (n == null) return '—';
+  if (n == null) return '-';
   return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 }
 

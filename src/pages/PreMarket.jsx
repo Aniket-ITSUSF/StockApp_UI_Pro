@@ -46,8 +46,8 @@ export default function PreMarket() {
           </p>
         </div>
         <div className="shrink-0 flex flex-col gap-1 justify-center text-xs sm:text-sm text-slate-500">
-          <p><span className="text-cyan-500 font-bold">US</span> — runs at 8:30 AM ET (13:30 UTC)</p>
-          <p><span className="text-orange-500 font-bold">India</span> — runs at 8:15 AM IST (02:45 UTC)</p>
+          <p><span className="text-cyan-500 font-bold">US</span> - runs at 8:30 AM ET (13:30 UTC)</p>
+          <p><span className="text-orange-500 font-bold">India</span> - runs at 8:15 AM IST (02:45 UTC)</p>
           <p className="text-slate-700 mt-1">Hotlist expires at market close · Mon–Fri only</p>
         </div>
       </div>

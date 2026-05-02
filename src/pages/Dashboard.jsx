@@ -97,7 +97,7 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, [fetchPortfolio, fetchEvaluations, fetchDiscoveries]);
 
-  // Silent background price poll — every 5 min, no loading state, no user signal
+  // Silent background price poll - every 5 min, no loading state, no user signal
   useEffect(() => {
     const id = setInterval(async () => {
       fetchPortfolio();
@@ -193,22 +193,22 @@ export default function Dashboard() {
       {/* ── Stats overview ────────────────────────────────── */}
       <StatsOverview portfolio={portfolio} />
 
-      {/* ── Performance chart — full width now that analysis has its own page ── */}
+      {/* ── Performance chart - full width now that analysis has its own page ── */}
       <PerformanceChart evaluations={evaluations} />
 
       {/* ── Mid-section leaderboard ─────────────────────── */}
       <AdLeaderboard />
 
-      {/* ── Hot Trades — self-contained panel ─────────────────────── */}
+      {/* ── Hot Trades - self-contained panel ─────────────────────── */}
       <HotTradesPanel onEvaluate={goAnalyze} onNavigate={() => navigate('/today')} />
 
-      {/* ── AI Radar — top-10 carousel ─────────────────────── */}
+      {/* ── AI Radar - top-10 carousel ─────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
               <Radar size={14} className="text-purple-400" />
-              Discovery — AI-surfaced Opportunities
+              Discovery - AI-surfaced Opportunities
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Private second-order opportunities found from your browser evaluations
@@ -248,7 +248,7 @@ export default function Dashboard() {
       {/* ── Mid-section leaderboard between AI Radar and Recent Intelligence ─── */}
       <AdLeaderboard />
 
-      {/* ── Recent Intelligence — top-10 carousel ─────────── */}
+      {/* ── Recent Intelligence - top-10 carousel ─────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -257,7 +257,7 @@ export default function Dashboard() {
               Recent History
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Your private browser-only evaluations — showing top 10
+              Your private browser-only evaluations - showing top 10
             </p>
           </div>
           <button

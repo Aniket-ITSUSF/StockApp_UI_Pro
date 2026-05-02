@@ -49,7 +49,7 @@ export default function HotTradesMiniCard({ item, onEvaluate }) {
         {/* Alpha score pill */}
         <div className={`shrink-0 flex flex-col items-center rounded-lg px-2 py-1 border ${scoreBg(item.alpha_score)}`}>
           <span className={`text-sm font-bold tabular-nums leading-none ${scoreColor(item.alpha_score)}`}>
-            {item.alpha_score != null ? item.alpha_score.toFixed(1) : '—'}
+            {item.alpha_score != null ? item.alpha_score.toFixed(1) : '-'}
           </span>
           <span className="text-xs text-slate-600 leading-none mt-0.5">α</span>
         </div>

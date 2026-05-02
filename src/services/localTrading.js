@@ -80,6 +80,9 @@ function positionFromEvaluation(ev, action) {
     support_vote: ev?.support_vote,
     relative_strength_vote: ev?.relative_strength_vote,
     complex_pullback_vote: ev?.complex_pullback_vote,
+    volume_profile_vote: ev?.volume_profile_vote,
+    volume_profile: ev?.volume_profile,
+    volume_profile_reasoning: ev?.volume_profile_reasoning,
     stat_arb_vote: ev?.stat_arb_vote,
     failure_test_vote: ev?.failure_test_vote,
   };
