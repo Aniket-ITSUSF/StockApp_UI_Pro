@@ -9,12 +9,26 @@ html, body, #root {
   margin: 0;
 }
 
+html {
+  font-size: clamp(15px, 0.95vw, 17px);
+  text-size-adjust: 100%;
+}
+
 body {
   background-color: #020617;
   color: #e2e8f0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 ::-webkit-scrollbar {

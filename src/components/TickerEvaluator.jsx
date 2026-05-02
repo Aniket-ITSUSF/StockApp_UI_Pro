@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Loader2, AlertCircle, Zap, ChevronDown } from 'lucide-react';
-import { evaluateTicker, evaluateTickerFast } from '../services/api';
+import {
+  evaluateTickerDiscovery,
+  evaluateTickerFast,
+  evaluateTickerSentiment,
+} from '../services/api';
 import EvaluationCard from './EvaluationCard';
 
 const QUICK_TICKERS = {
@@ -21,7 +25,23 @@ function detectMarket() {
   return 'US';
 }
 
+function deriveAction(d) {
+  if (d.action_taken) return d.action_taken;
+  const rawScore = d.final_weighted_alpha_score ?? d.final_alpha_score ?? d.weighted_alpha_score ?? d.total_consensus_score;
+  const score = rawScore > 1 ? rawScore : rawScore * 100;
+  const threshold = d.required_threshold ?? 65;
+  if (score >= threshold && d.mtf_status !== 'VETO') return 'BUY';
+  return 'REJECTED_CONSENSUS';
+}
+
 function mapVotes(d, sym) {
+  const statArbVote = typeof d.stat_arb_vote === 'object'
+    ? d.stat_arb_vote?.vote
+    : d.stat_arb_vote;
+  const failureTestVote = typeof d.failure_test_vote === 'object'
+    ? d.failure_test_vote?.vote
+    : d.failure_test_vote;
+
   return {
     ...d,
     ticker: sym,
@@ -30,11 +50,12 @@ function mapVotes(d, sym) {
     support_vote:           d.votes?.find(v => v.agent_name === 'support_resistance')?.vote,
     relative_strength_vote: d.votes?.find(v => v.agent_name === 'relative_strength')?.vote,
     complex_pullback_vote:  d.votes?.find(v => v.agent_name === 'complex_pullback')?.vote,
-    stat_arb_vote:          d.stat_arb_vote?.vote,
-    failure_test_vote:      d.failure_test_vote?.vote,
+    stat_arb_vote:          statArbVote,
+    failure_test_vote:      failureTestVote,
     final_alpha_score:      d.final_weighted_alpha_score ?? d.weighted_alpha_score,
+    action_taken:           deriveAction(d),
     reasoning:              d.reasoning ?? d.decision_reason,
-    sentiment_score:        d.peterson_score,
+    sentiment_score:        d.sentiment_score ?? d.peterson_score,
     decision_path:          d.decision_path ?? null,
   };
 }
@@ -44,6 +65,7 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
   const [ticker, setTicker]           = useState('');
   const [loading, setLoading]         = useState(false);
   const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [discoveryLoading, setDiscoveryLoading] = useState(false);
   const [result, setResult]           = useState(null);
   const [error, setError]             = useState(null);
   const inputRef = useRef(null);
@@ -84,28 +106,63 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
     if (!sym) return;
     setLoading(true);
     setSentimentLoading(false);
+    setDiscoveryLoading(false);
     setError(null);
     setResult(null);
     try {
-      // ── Phase 1: math-only (fast) — show card immediately ─────────────
+      // Stage 1: math-only fast evaluation - show the card immediately.
       const fastRes = await evaluateTickerFast(sym);
-      const partial = mapVotes({ ...fastRes.data, action_taken: 'ANALYZING' }, sym);
-      setResult(partial);
-      setLoading(false);
-      setSentimentLoading(true);
+      let latest = mapVotes(fastRes.data, sym);
+      const mergeLatest = (patch) => {
+        latest = mapVotes({ ...latest, ...patch, ticker: sym }, sym);
+        setResult(latest);
+      };
 
-      // ── Phase 2: full AI evaluation — resolves badge + sentiment ───────
-      const fullRes = await evaluateTicker(sym);
-      const full = mapVotes(fullRes.data, sym);
-      setResult(full);
-      setSentimentLoading(false);
-      if (onNewEvaluation) onNewEvaluation(full);
+      const partial = latest;
+      setResult(partial);
+      if (onNewEvaluation) onNewEvaluation(partial);
+      setLoading(false);
+
+      // Stage 2: sentiment and discovery are independent cache-backed calls.
+      setSentimentLoading(true);
+      setDiscoveryLoading(true);
+
+      const sentimentPromise = evaluateTickerSentiment(sym)
+        .then((res) => {
+          mergeLatest(res.data);
+        })
+        .catch((err) => {
+          setError(err.response?.data?.detail ?? err.message ?? 'Sentiment unavailable');
+        })
+        .finally(() => setSentimentLoading(false));
+
+      const discoveryPromise = evaluateTickerDiscovery(sym)
+        .then((res) => {
+          const bestDiscovery =
+            res.data?.best_discovery ??
+            res.data?.best_discovery_opportunity ??
+            res.data?.discovery_opportunities?.[0] ??
+            null;
+          mergeLatest({
+            best_discovery: bestDiscovery,
+            linked_shares: res.data?.linked_shares ?? res.data?.discovery_opportunities ?? [],
+            discovery_report: res.data,
+          });
+        })
+        .catch(() => {
+          // Discovery is additive. Keep the technical + sentiment result visible.
+        })
+        .finally(() => setDiscoveryLoading(false));
+
+      await Promise.all([sentimentPromise, discoveryPromise]);
+      if (onNewEvaluation) onNewEvaluation(latest);
     } catch (err) {
       setError(err.response?.data?.detail ?? err.message ?? 'Evaluation failed');
       setResult(null);
     } finally {
       setLoading(false);
       setSentimentLoading(false);
+      setDiscoveryLoading(false);
     }
   };
 
@@ -149,31 +206,31 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
         />
         <button
           onClick={() => run()}
-          disabled={loading || sentimentLoading || !ticker.trim()}
+          disabled={loading || sentimentLoading || discoveryLoading || !ticker.trim()}
           className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 border border-emerald-500/30 text-emerald-400 text-sm font-medium rounded-lg transition-colors shrink-0"
         >
           {loading
             ? <Loader2 size={14} className="animate-spin" />
             : <Search size={14} />}
-          {(loading || sentimentLoading) ? 'Analyzing…' : 'Evaluate'}
+          {(loading || sentimentLoading || discoveryLoading) ? 'Analyzing…' : 'Evaluate'}
         </button>
       </div>
 
       {/* Quick picks */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[11px] text-slate-600 font-medium">Quick:</span>
+        <span className="text-xs text-slate-600 font-medium">Quick:</span>
         {quickTickers.map((t) => (
           <button
             key={t}
             onClick={() => { setTicker(t); run(t); }}
             disabled={loading}
-            className="text-[11px] text-slate-500 hover:text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded px-2 py-0.5 transition-colors disabled:opacity-40 font-mono"
+            className="text-xs text-slate-500 hover:text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded px-2 py-0.5 transition-colors disabled:opacity-40 font-mono"
           >
             {t}
           </button>
         ))}
         {market === 'IND' && (
-          <span className="text-[10px] text-slate-600 font-mono ml-1">· auto-appends .NS</span>
+          <span className="text-xs text-slate-600 font-mono ml-1">· auto-appends .NS</span>
         )}
       </div>
 
@@ -194,7 +251,13 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
       )}
 
       {/* Result */}
-      {result && <EvaluationCard evaluation={result} sentimentLoading={sentimentLoading} />}
+      {result && (
+        <EvaluationCard
+          evaluation={result}
+          sentimentLoading={sentimentLoading}
+          discoveryLoading={discoveryLoading}
+        />
+      )}
     </div>
   );
 }

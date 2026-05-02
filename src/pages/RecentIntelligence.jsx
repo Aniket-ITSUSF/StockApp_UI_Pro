@@ -1,12 +1,24 @@
-import { Fragment, useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useCallback } from 'react';
 import { Brain, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import EvaluationCard from '../components/EvaluationCard';
 import AdInFeed from '../components/ads/AdInFeed';
-import { getEvaluationsPaged } from '../services/api';
+import { getLocalRecentEvaluations } from '../services/localTrading';
 
 const AD_EVERY = 5;
 
 const PAGE_SIZE = 18;
+
+function getEvaluationPage(p = 1) {
+  const allEvaluations = getLocalRecentEvaluations();
+  const pages = Math.max(Math.ceil(allEvaluations.length / PAGE_SIZE), 1);
+  const page = Math.min(Math.max(p, 1), pages);
+  const start = (page - 1) * PAGE_SIZE;
+  return {
+    items: allEvaluations.slice(start, start + PAGE_SIZE),
+    page,
+    meta: { total: allEvaluations.length, pages },
+  };
+}
 
 function Pagination({ page, pages, total, onPrev, onNext }) {
   return (
@@ -35,26 +47,18 @@ function Pagination({ page, pages, total, onPrev, onNext }) {
 }
 
 export default function RecentIntelligence() {
-  const [evaluations, setEvaluations] = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [page,        setPage]        = useState(1);
-  const [meta,        setMeta]        = useState({ total: 0, pages: 1 });
+  const [snapshot,    setSnapshot]    = useState(() => getEvaluationPage(1));
+  const [loading,     setLoading]     = useState(false);
 
-  const load = useCallback(async (p = 1) => {
+  const evaluations = snapshot.items;
+  const page = snapshot.page;
+  const meta = snapshot.meta;
+
+  const load = useCallback((p = 1) => {
     setLoading(true);
-    try {
-      const res = await getEvaluationsPaged(p, PAGE_SIZE);
-      setEvaluations(res.data?.items ?? []);
-      setMeta({ total: res.data?.total ?? 0, pages: res.data?.pages ?? 1 });
-      setPage(p);
-    } catch {
-      setEvaluations([]);
-    } finally {
-      setLoading(false);
-    }
+    setSnapshot(getEvaluationPage(p));
+    setLoading(false);
   }, []);
-
-  useEffect(() => { load(1); }, [load]);
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6 min-h-full">
@@ -64,10 +68,10 @@ export default function RecentIntelligence() {
         <div>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Brain size={18} className="text-emerald-400" />
-            Recent Intelligence
+            History
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            All committee evaluations · newest first · paginated
+            Your private browser-only committee evaluations · newest first
           </p>
         </div>
         <button
@@ -114,10 +118,10 @@ export default function RecentIntelligence() {
         <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-24 flex flex-col items-center justify-center gap-3">
           <Brain size={32} className="text-slate-700" />
           <p className="text-sm text-slate-600">No evaluations recorded yet.</p>
-          <p className="text-xs text-slate-700">Use the evaluator on the dashboard to get started.</p>
+          <p className="text-xs text-slate-700">Use Analyze to populate this local feed.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
           {evaluations.map((ev, idx) => (
             <Fragment key={ev.id ?? idx}>
               <EvaluationCard evaluation={ev} />

@@ -22,6 +22,6 @@ export function writeConsent(choice) {
   }
 }
 
-export function consentGivenForPersonalized() {
-  return readConsent() === 'all';
+export function consentGivenForPersonalized(choice = readConsent()) {
+  return choice === 'all';
 }

@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { TrendingUp, TrendingDown, Minus, RefreshCw, Clock, Wifi, WifiOff } from 'lucide-react';
-import { getPortfolioSummary, getBatchPrices } from '../services/api';
+import { TrendingUp, TrendingDown, Minus, RefreshCw, Clock, Wifi, WifiOff, ShieldCheck, Trash2 } from 'lucide-react';
+import { getBatchPrices } from '../services/api';
+import {
+  buildPortfolioSummary,
+  clearLocalPortfolio,
+  getLocalPortfolioPositions,
+  getLocalShadowPositions,
+} from '../services/localTrading';
 import {
   getMarketForTicker,
   isMarketOpen,
@@ -42,7 +48,7 @@ function MarketBadge({ ticker }) {
   const market = getMarketForTicker(ticker);
   const open   = isMarketOpen(market);
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded font-mono ${
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded font-mono ${
       open
         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
         : 'bg-slate-800 text-slate-500 border border-slate-700'
@@ -75,7 +81,7 @@ function PositionRow({ pos, livePrice }) {
           {fmtPrice(price, pos.ticker)}
         </span>
         {isLive && (
-          <span className="ml-1.5 text-[9px] text-emerald-500 font-semibold uppercase tracking-wide">live</span>
+          <span className="ml-1.5 text-xs text-emerald-500 font-semibold uppercase tracking-wide">live</span>
         )}
       </td>
       <td className="px-4 py-3 text-rose-400 text-sm tabular-nums">{fmtPrice(pos.stop_loss, pos.ticker)}</td>
@@ -106,13 +112,17 @@ export default function Portfolio() {
   const [polling,    setPolling]    = useState(false);
   const timerRef = useRef(null);
 
+  const loadLocalPortfolio = useCallback(() => {
+    const real = getLocalPortfolioPositions();
+    const shadow = getLocalShadowPositions();
+    setData(buildPortfolioSummary(real, shadow));
+    setLoading(false);
+  }, []);
+
   // ── Initial load ────────────────────────────────────────────────────────────
   useEffect(() => {
-    getPortfolioSummary()
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail ?? 'Failed to load portfolio'))
-      .finally(() => setLoading(false));
-  }, []);
+    loadLocalPortfolio();
+  }, [loadLocalPortfolio]);
 
   // ── Poller ──────────────────────────────────────────────────────────────────
   const runPoll = useCallback(async (positions) => {
@@ -130,7 +140,7 @@ export default function Portfolio() {
       setLivePrices((prev) => ({ ...prev, ...prices }));
       setLastPolled(new Date());
     } catch {
-      // Silent fail — keep showing last known prices
+      setError('Could not refresh live prices. Your private portfolio is still stored locally.');
     } finally {
       setPolling(false);
     }
@@ -166,25 +176,30 @@ export default function Portfolio() {
   if (indTickers.length > 0) marketLines.push(`NSE: ${marketStatusLabel('IND')}`);
   if (usTickers.length  > 0) marketLines.push(`NYSE: ${marketStatusLabel('US')}`);
 
+  const handleClear = () => {
+    clearLocalPortfolio();
+    setData(buildPortfolioSummary([], getLocalShadowPositions()));
+  };
+
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6">
 
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Real Portfolio</h1>
+          <h1 className="text-xl font-bold text-slate-100">Holdings</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Executed paper trades · P&L updates every 5 min during market hours
+            Private paper holdings stored in this browser · live prices come from our server
           </p>
         </div>
 
         {/* Market status + last-updated */}
         <div className="flex flex-col items-start sm:items-end gap-1">
           {marketLines.map((line) => (
-            <span key={line} className="text-[11px] text-slate-500 font-mono">{line}</span>
+            <span key={line} className="text-xs text-slate-500 font-mono">{line}</span>
           ))}
           {lastPolled && (
-            <div className="flex items-center gap-1 text-[11px] text-slate-600">
+            <div className="flex items-center gap-1 text-xs text-slate-600">
               {polling
                 ? <RefreshCw size={10} className="animate-spin text-emerald-500" />
                 : <Clock size={10} />}
@@ -195,12 +210,29 @@ export default function Portfolio() {
               </span>
             </div>
           )}
+          {positions.length > 0 && (
+            <button
+              onClick={handleClear}
+              className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-rose-300 transition-colors"
+            >
+              <Trash2 size={10} />
+              Clear local portfolio
+            </button>
+          )}
         </div>
+      </div>
+
+      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 flex items-start gap-2.5">
+        <ShieldCheck size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+        <p className="text-xs text-emerald-300/90 leading-relaxed">
+          Your portfolio stays private. Holdings are saved only in this browser and are never sent to our server.
+          If you clear cookies/site data or switch devices, you may lose these holdings.
+        </p>
       </div>
 
       {error && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-sm text-rose-400">
-          ⚠ {error}
+          {error}
         </div>
       )}
 
@@ -262,7 +294,7 @@ export default function Portfolio() {
 
       {/* Polling footnote */}
       {positions.length > 0 && (
-        <p className="text-[11px] text-slate-600 text-right">
+        <p className="text-xs text-slate-600 text-right">
           Prices polled from Yahoo Finance every 5 min · market hours only ·
           no WebSocket — paper trading does not require sub-minute precision
         </p>

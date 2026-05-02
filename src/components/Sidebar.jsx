@@ -1,16 +1,22 @@
-import { BarChart2, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Brain, Globe } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { Home, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Clock, Globe, Sparkles } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
 import AdSidebar from './ads/AdSidebar';
 
 const NAV = [
-  { id: 'dashboard',    label: 'Dashboard',     icon: BarChart2    },
-  { id: 'portfolio',    label: 'Portfolio',      icon: Briefcase    },
-  { id: 'shadow-lab',  label: 'Shadow Lab',     icon: FlaskConical },
-  { id: 'ai-radar',    label: 'AI Radar',       icon: Radar        },
-  { id: 'pre-market',  label: 'Pre-Market',     icon: Globe        },
-  { id: 'intelligence', label: 'Intelligence',  icon: Brain        },
-  { id: 'settings',    label: 'Settings',       icon: Settings     },
+  { to: '/analyze',   label: 'Analyze',         icon: Sparkles     },
+  { to: '/home',      label: 'Home',            icon: Home         },
+  { to: '/holdings',  label: 'Holdings',        icon: Briefcase    },
+  { to: '/today',     label: "Intraday's Play", icon: Globe        },
+  { to: '/discovery', label: 'Discovery',       icon: Radar        },
+  { to: '/history',   label: 'History',         icon: Clock        },
+  { to: '/backtest',  label: 'Backtest',        icon: FlaskConical },
+  { to: '/settings',  label: 'Settings',        icon: Settings     },
 ];
+
+const MOBILE_NAV = NAV.filter(({ to }) =>
+  ['/analyze', '/home', '/holdings', '/today', '/discovery'].includes(to),
+);
 
 function StatusFooter() {
   const { status, lastChecked, retry } = useBackend();
@@ -44,7 +50,7 @@ function StatusFooter() {
           ? <RefreshCw size={11} className="text-amber-400 animate-spin shrink-0" />
           : <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
         }
-        <span className={`text-[11px] font-semibold leading-none ${s.text}`}>
+        <span className={`text-xs font-semibold leading-none ${s.text}`}>
           {s.label}
         </span>
       </div>
@@ -53,7 +59,7 @@ function StatusFooter() {
       {status === 'disconnected' && (
         <button
           onClick={retry}
-          className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-[11px] font-semibold transition-colors"
+          className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 text-xs font-semibold transition-colors"
         >
           <WifiOff size={11} />
           Retry
@@ -62,7 +68,7 @@ function StatusFooter() {
 
       {/* Last checked timestamp */}
       {lastChecked && status !== 'checking' && (
-        <p className="text-[10px] text-slate-700 text-center">
+        <p className="text-xs text-slate-700 text-center">
           Checked {lastChecked.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </p>
       )}
@@ -70,64 +76,62 @@ function StatusFooter() {
   );
 }
 
-export function MobileNav({ currentPage, onNavigate }) {
+export function MobileNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 flex items-stretch safe-bottom">
-      {NAV.map((item) => {
-        const active  = currentPage === item.id;
+      {MOBILE_NAV.map((item) => {
         const NavIcon = item.icon;
         return (
-          <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors ${
-              active ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <NavIcon size={18} className={active ? 'text-emerald-400' : ''} />
+            <NavIcon size={18} />
             <span className="leading-none">{item.label}</span>
-          </button>
+          </NavLink>
         );
       })}
     </nav>
   );
 }
 
-export default function Sidebar({ currentPage, onNavigate }) {
+export default function Sidebar() {
   return (
     <aside className="hidden md:flex w-56 bg-slate-900 border-r border-slate-800 flex-col h-full shrink-0">
 
       {/* Logo */}
       <div className="px-4 py-5 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
+        <NavLink to="/analyze" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0">
             <span className="text-emerald-400 text-base font-bold leading-none">α</span>
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-100 leading-none tracking-wide">AlphaDesk</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">Paper Trading AI</p>
+            <p className="text-sm font-bold text-slate-100 leading-none tracking-wide">EquiQuant</p>
+            <p className="text-xs text-slate-500 mt-0.5">AI Quant Researcher</p>
           </div>
-        </div>
+        </NavLink>
       </div>
 
       {/* Nav links */}
       <nav className="p-2.5 flex flex-col gap-0.5">
         {NAV.map((item) => {
-          const active  = currentPage === item.id;
           const NavIcon = item.icon;
           return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-100 w-full text-left ${
-                active
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-100 w-full text-left ${
+                isActive
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-transparent'
               }`}
             >
               <NavIcon size={15} />
               {item.label}
-            </button>
+            </NavLink>
           );
         })}
       </nav>

@@ -1,54 +1,71 @@
-import { useEffect, useState } from 'react';
-import { Cookie } from 'lucide-react';
+import { Cookie, ShieldCheck } from 'lucide-react';
 import { readConsent, writeConsent } from '../utils/consent';
+import { useAdContext } from './ads/adContext';
 
 export default function CookieConsent() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (readConsent() === null) setVisible(true);
-  }, []);
-
-  if (!visible) return null;
+  const { consentChoice, setConsentChoice } = useAdContext();
+  const visible = consentChoice === null && readConsent() === null;
 
   const choose = (choice) => {
     writeConsent(choice);
-    setVisible(false);
-    // Reload so AdSense initializes with the chosen personalization mode
-    if (typeof window !== 'undefined') window.location.reload();
+    setConsentChoice(choice);
   };
+
+  if (!visible) return null;
 
   return (
     <div
       role="dialog"
+      aria-modal="true"
       aria-label="Cookie consent"
-      className="fixed left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-md border-t border-slate-700 shadow-2xl"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0px)' }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm"
     >
-      <div className="max-w-5xl mx-auto px-4 py-4 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <Cookie size={18} className="text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-300 leading-relaxed">
-            We use essential cookies to operate AlphaDesk and, with your consent, additional cookies for personalized ads and measurement.{' '}
+      <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-2">
+            <Cookie size={20} className="text-amber-300" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-slate-100">Choose your cookie settings</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">
+              We use essential storage to keep the app working. With your permission, we also use
+              ad cookies for personalized ads and measurement. We will not load ad scripts or ad
+              units until you choose an option.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-3">
+          <div className="flex items-start gap-2">
+            <ShieldCheck size={15} className="mt-0.5 shrink-0 text-emerald-400" />
+            <p className="text-xs leading-relaxed text-slate-400">
+              Your choice is saved in this browser using local storage, so we do not ask again on
+              every visit. You can clear site data if you want to reset it.
+            </p>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Read our{' '}
             <a href="/privacy.html" className="text-emerald-400 hover:text-emerald-300 underline" target="_blank" rel="noopener">
               Privacy Policy
             </a>
-            {' · '}
+            {' '}and{' '}
             <a href="/terms.html" className="text-emerald-400 hover:text-emerald-300 underline" target="_blank" rel="noopener">
               Terms
             </a>
+            .
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+
+        <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <button
             onClick={() => choose('essential')}
-            className="flex-1 sm:flex-initial text-xs font-semibold text-slate-300 hover:text-slate-100 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 rounded-lg px-4 py-2 transition-colors"
+            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700"
           >
             Essential only
           </button>
           <button
             onClick={() => choose('all')}
-            className="flex-1 sm:flex-initial text-xs font-semibold text-emerald-50 bg-emerald-500 hover:bg-emerald-400 rounded-lg px-4 py-2 transition-colors shadow-lg shadow-emerald-500/20"
+            className="rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-400"
           >
             Accept all
           </button>

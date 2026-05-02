@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FlaskConical, TrendingUp, TrendingDown, Minus,
-  RefreshCw, Clock, ShieldX, AlertTriangle, BarChart2, Clock3,
+  RefreshCw, Clock, ShieldX, AlertTriangle, BarChart2, Clock3, ShieldCheck, Trash2,
 } from 'lucide-react';
-import { getShadowPositions, getBatchPrices } from '../services/api';
-import { filterOpenMarketTickers, getMarketForTicker, isMarketOpen, marketStatusLabel } from '../utils/marketHours';
+import { getBatchPrices } from '../services/api';
+import { filterOpenMarketTickers, getMarketForTicker, marketStatusLabel } from '../utils/marketHours';
+import {
+  buildPortfolioSummary,
+  clearLocalShadowLab,
+  getLocalPortfolioPositions,
+  getLocalShadowPositions,
+} from '../services/localTrading';
 import AgentVoteGrid from '../components/AgentVoteGrid';
 import CircularProgress from '../components/CircularProgress';
 import Tooltip from '../components/Tooltip';
@@ -130,50 +136,50 @@ function ShadowCard({ pos, livePrice }) {
         <Tooltip content={ALPHA_TIP} width={224}>
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={64} />
-            <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
+            <span className="text-xs text-slate-500 mt-1 font-medium">ALPHA</span>
           </div>
         </Tooltip>
       </div>
 
       {/* ── "What you would have paid" narrative ───────────────────── */}
       <div className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 flex flex-col gap-2.5">
-        <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Hypothetical trade snapshot
         </p>
 
         <div className="grid grid-cols-3 gap-3">
           {/* Entry price */}
           <div>
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Would have paid</p>
+            <p className="text-xs text-slate-600 uppercase tracking-wider mb-0.5">Would have paid</p>
             <p className="text-sm font-semibold text-slate-300 tabular-nums font-mono">
               {fmtPrice(entry, pos.ticker)}
             </p>
-            <p className="text-[10px] text-slate-600">{qty} shares</p>
+            <p className="text-xs text-slate-600">{qty} shares</p>
           </div>
 
           {/* Current price */}
           <div>
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Price today</p>
+            <p className="text-xs text-slate-600 uppercase tracking-wider mb-0.5">Price today</p>
             <p className={`text-sm font-semibold tabular-nums font-mono ${isLive ? 'text-slate-100' : 'text-slate-400'}`}>
               {fmtPrice(price, pos.ticker)}
               {isLive && (
-                <span className="ml-1 text-[9px] text-emerald-500 font-semibold not-italic">live</span>
+                <span className="ml-1 text-xs text-emerald-500 font-semibold not-italic">live</span>
               )}
             </p>
-            <p className="text-[10px] text-slate-600">
+            <p className="text-xs text-slate-600">
               {isLive ? 'live price' : 'last close'}
             </p>
           </div>
 
           {/* Shadow P&L */}
           <div>
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5">Would be worth</p>
+            <p className="text-xs text-slate-600 uppercase tracking-wider mb-0.5">Would be worth</p>
             <div className={`flex items-center gap-1 text-sm font-semibold tabular-nums font-mono ${pnlColor}`}>
               <PnlIcon size={13} />
               {pnl != null ? fmtPrice(Math.abs(pnl), pos.ticker) : '—'}
             </div>
             {pct != null && (
-              <p className={`text-[10px] ${pnlColor}`}>
+              <p className={`text-xs ${pnlColor}`}>
                 {pct > 0 ? '+' : ''}{pct.toFixed(2)}%
               </p>
             )}
@@ -237,7 +243,7 @@ function ShadowCard({ pos, livePrice }) {
 
       {/* ── Agent vote grid ────────────────────────────────────────── */}
       <div>
-        <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">
+        <p className="text-xs text-slate-600 uppercase tracking-wider font-semibold mb-2">
           Agent votes at time of evaluation — hover each for explanation
         </p>
         <AgentVoteGrid evaluation={pos} />
@@ -257,13 +263,17 @@ export default function ShadowLab() {
   const [polling,    setPolling]    = useState(false);
   const timerRef = useRef(null);
 
+  const loadLocalShadow = useCallback(() => {
+    const real = getLocalPortfolioPositions();
+    const shadow = getLocalShadowPositions();
+    setData(buildPortfolioSummary(real, shadow).shadow_portfolio);
+    setLoading(false);
+  }, []);
+
   // Initial load
   useEffect(() => {
-    getShadowPositions()
-      .then(r => setData(r.data))
-      .catch(e => setError(e.response?.data?.detail ?? 'Failed to load shadow positions'))
-      .finally(() => setLoading(false));
-  }, []);
+    loadLocalShadow();
+  }, [loadLocalShadow]);
 
   // Poller — same market-hours logic as Portfolio
   const runPoll = useCallback(async (positions) => {
@@ -274,10 +284,11 @@ export default function ShadowLab() {
     setPolling(true);
     try {
       const res = await getBatchPrices(openTickers);
-      setLivePrices(prev => ({ ...prev, ...(res.data?.prices ?? {}) }));
+      const prices = res.data?.prices ?? {};
+      setLivePrices(prev => ({ ...prev, ...prices }));
       setLastPolled(new Date());
     } catch {
-      // silent — keep showing last known prices
+      setError('Could not refresh live prices. Your private Shadow Lab is still stored locally.');
     } finally {
       setPolling(false);
     }
@@ -311,6 +322,11 @@ export default function ShadowLab() {
     ...(hasUS    ? [`NYSE: ${marketStatusLabel('US')}`]  : []),
   ];
 
+  const handleClear = () => {
+    clearLocalShadowLab();
+    setData(buildPortfolioSummary(getLocalPortfolioPositions(), []).shadow_portfolio);
+  };
+
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-6">
 
@@ -319,19 +335,19 @@ export default function ShadowLab() {
         <div className="flex items-center gap-3">
           <FlaskConical size={20} className="text-amber-400 shrink-0" />
           <div>
-            <h1 className="text-xl font-bold text-slate-100">Shadow Lab</h1>
+            <h1 className="text-xl font-bold text-slate-100">Backtest</h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Trades the committee rejected — tracked to measure what the system saved (or missed)
+              Private rejected-trade experiments stored in this browser
             </p>
           </div>
         </div>
 
         <div className="flex flex-col items-start sm:items-end gap-1">
           {marketLines.map(l => (
-            <span key={l} className="text-[11px] text-slate-500 font-mono">{l}</span>
+            <span key={l} className="text-xs text-slate-500 font-mono">{l}</span>
           ))}
           {lastPolled && (
-            <div className="flex items-center gap-1 text-[11px] text-slate-600">
+            <div className="flex items-center gap-1 text-xs text-slate-600">
               {polling
                 ? <RefreshCw size={10} className="animate-spin text-amber-500" />
                 : <Clock size={10} />}
@@ -340,12 +356,21 @@ export default function ShadowLab() {
               </span>
             </div>
           )}
+          {positions.length > 0 && (
+            <button
+              onClick={handleClear}
+              className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-rose-300 transition-colors"
+            >
+              <Trash2 size={10} />
+              Clear local backtest
+            </button>
+          )}
         </div>
       </div>
 
       {error && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-sm text-rose-400">
-          ⚠ {error}
+          {error}
         </div>
       )}
 
@@ -353,6 +378,14 @@ export default function ShadowLab() {
       <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 text-xs text-amber-400/80 leading-relaxed">
         These positions were <strong>never executed</strong>. The committee blocked them for the reasons shown below.
         Track them over time to validate the system's strictness — and tune agent weights in Settings if needed.
+      </div>
+
+      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 flex items-start gap-2.5">
+        <ShieldCheck size={15} className="text-emerald-400 shrink-0 mt-0.5" />
+        <p className="text-xs text-emerald-300/90 leading-relaxed">
+          Backtest history stays private too. Rejected trades are saved only in this browser and are never sent to our server.
+          Clearing cookies/site data may remove this history.
+        </p>
       </div>
 
       {/* Summary cards */}
@@ -404,7 +437,7 @@ export default function ShadowLab() {
       )}
 
       {positions.length > 0 && (
-        <p className="text-[11px] text-slate-600 text-right">
+        <p className="text-xs text-slate-600 text-right">
           Prices polled from Yahoo Finance every 5 min · market hours only
         </p>
       )}

@@ -1,12 +1,25 @@
-import { Fragment, useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Radar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import DiscoveryCard from '../components/DiscoveryCard';
 import AdInFeed from '../components/ads/AdInFeed';
-import { getDiscoveriesPaged } from '../services/api';
+import { getLocalRadarDiscoveries } from '../services/localTrading';
 
 const AD_EVERY = 5;
 
 const PAGE_SIZE = 15;
+
+function getDiscoveryPage(p = 1) {
+  const allDiscoveries = getLocalRadarDiscoveries();
+  const pages = Math.max(Math.ceil(allDiscoveries.length / PAGE_SIZE), 1);
+  const page = Math.min(Math.max(p, 1), pages);
+  const start = (page - 1) * PAGE_SIZE;
+  return {
+    items: allDiscoveries.slice(start, start + PAGE_SIZE),
+    page,
+    meta: { total: allDiscoveries.length, pages },
+  };
+}
 
 function Pagination({ page, pages, total, onPrev, onNext }) {
   return (
@@ -34,30 +47,23 @@ function Pagination({ page, pages, total, onPrev, onNext }) {
   );
 }
 
-export default function AiRadar({ onNavigate }) {
-  const [discoveries, setDiscoveries] = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [page,        setPage]        = useState(1);
-  const [meta,        setMeta]        = useState({ total: 0, pages: 1 });
+export default function AiRadar() {
+  const navigate = useNavigate();
+  const [snapshot,    setSnapshot]    = useState(() => getDiscoveryPage(1));
+  const [loading,     setLoading]     = useState(false);
 
-  const load = useCallback(async (p = 1) => {
+  const discoveries = snapshot.items;
+  const page = snapshot.page;
+  const meta = snapshot.meta;
+
+  const load = useCallback((p = 1) => {
     setLoading(true);
-    try {
-      const res = await getDiscoveriesPaged(p, PAGE_SIZE);
-      setDiscoveries(res.data?.discoveries ?? []);
-      setMeta({ total: res.data?.total ?? 0, pages: res.data?.pages ?? 1 });
-      setPage(p);
-    } catch {
-      setDiscoveries([]);
-    } finally {
-      setLoading(false);
-    }
+    setSnapshot(getDiscoveryPage(p));
+    setLoading(false);
   }, []);
 
-  useEffect(() => { load(1); }, [load]);
-
-  const handleEvaluate = (_ticker) => {
-    if (onNavigate) onNavigate('dashboard');
+  const handleEvaluate = (ticker) => {
+    navigate(`/analyze?ticker=${encodeURIComponent(ticker)}`);
   };
 
   return (
@@ -68,10 +74,10 @@ export default function AiRadar({ onNavigate }) {
         <div>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Radar size={18} className="text-purple-400" />
-            AI Radar
+            Discovery
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            All second-order opportunities surfaced by the Discovery Agent · newest first
+            Private second-order opportunities from your browser evaluations · newest first
           </p>
         </div>
         <button
@@ -106,10 +112,10 @@ export default function AiRadar({ onNavigate }) {
         <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl py-24 flex flex-col items-center justify-center gap-3">
           <Radar size={32} className="text-slate-700" />
           <p className="text-sm text-slate-600">No discoveries recorded yet.</p>
-          <p className="text-xs text-slate-700">Evaluate tickers on the dashboard to populate this feed.</p>
+          <p className="text-xs text-slate-700">Analyze tickers to populate this private local feed.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
           {discoveries.map((disc, idx) => (
             <Fragment key={disc.id ?? `${disc.primary_ticker}-${disc.ticker}`}>
               <DiscoveryCard disc={disc} onEvaluate={handleEvaluate} />

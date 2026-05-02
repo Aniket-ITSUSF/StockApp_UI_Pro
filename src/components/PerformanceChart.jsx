@@ -50,7 +50,7 @@ export default function PerformanceChart({ evaluations = [] }) {
             {data.length} evaluations · threshold at 65
           </p>
         </div>
-        <div className="flex items-center gap-4 text-[11px] text-slate-500">
+        <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
             Executed

@@ -1,27 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import AdUnit from './AdUnit';
 import { SLOTS } from '../../utils/adsense';
-import { useAdContext } from './AdProvider';
+import { useAdContext } from './adContext';
 
 const STORAGE_KEY = 'ad_anchor_dismissed';
 
+function readDismissed() {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export default function AdAnchor() {
-  const { adsEnabled } = useAdContext();
-  const [dismissed, setDismissed] = useState(true); // start hidden, settle on mount to avoid SSR-style flash
+  const { adsEnabled, consentChosen } = useAdContext();
+  const [dismissed, setDismissed] = useState(() => readDismissed());
 
-  useEffect(() => {
-    try {
-      setDismissed(sessionStorage.getItem(STORAGE_KEY) === '1');
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
-
-  if (!adsEnabled || dismissed) return null;
+  if (!adsEnabled || !consentChosen || dismissed) return null;
 
   const handleDismiss = () => {
-    try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch {}
+    try {
+      sessionStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // Storage can be unavailable in private browsing.
+    }
     setDismissed(true);
   };
 

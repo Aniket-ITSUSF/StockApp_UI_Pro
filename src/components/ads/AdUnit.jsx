@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PUBLISHER_ID } from '../../utils/adsense';
-import { useAdContext } from './AdProvider';
+import { useAdContext } from './adContext';
 
 export default function AdUnit({
   slot,
@@ -36,7 +36,7 @@ export default function AdUnit({
 
   useEffect(() => {
     if (!visible || pushedRef.current) return;
-    if (!consentChosen) return; // wait for cookie banner choice before pushing any ad
+    if (!consentChosen) return; // wait for cookie choice before pushing any ad
     if (import.meta.env.DEV) return;
     if (!slot) return;
     try {
@@ -47,7 +47,7 @@ export default function AdUnit({
     }
   }, [visible, slot, consentChosen]);
 
-  if (!adsEnabled) return null;
+  if (!adsEnabled || !consentChosen) return null;
   // In production, a missing slot ID means the slot hasn't been created in AdSense yet — render nothing.
   if (!import.meta.env.DEV && !slot) return null;
 

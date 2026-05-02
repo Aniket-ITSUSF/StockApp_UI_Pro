@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, TrendingDown, Globe, RefreshCw, Zap, AlertCircle, Clock, Newspaper } from 'lucide-react';
 import { getPreMarketHotlist, runPreMarketAgent } from '../services/api';
+import AdInFeed from './ads/AdInFeed';
 
 const CONFIDENCE_META = {
   HIGH:   { cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', dot: 'bg-emerald-400' },
@@ -41,11 +42,11 @@ function HotlistCard({ item, onEvaluate }) {
             <span className="text-lg font-bold tracking-widest text-slate-100 font-mono">
               {item.ticker}
             </span>
-            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${confidence.cls}`}>
+            <span className={`inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border ${confidence.cls}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${confidence.dot}`} />
               {item.confidence}
             </span>
-            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${marketBadge.cls}`}>
+            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${marketBadge.cls}`}>
               {marketBadge.label}
             </span>
           </div>
@@ -63,14 +64,14 @@ function HotlistCard({ item, onEvaluate }) {
             <span className={`text-sm font-bold tabular-nums leading-none ${isBullish ? 'text-emerald-400' : 'text-rose-400'}`}>
               {isBullish ? '+' : ''}{item.expected_move_pct}%
             </span>
-            <span className="text-[9px] text-slate-600 leading-none mt-0.5">est. move</span>
+            <span className="text-xs text-slate-600 leading-none mt-0.5">est. move</span>
           </div>
         )}
       </div>
 
       {/* Direction badge */}
       <div className="flex items-center gap-2">
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
           isBullish
             ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25'
             : 'text-rose-400 bg-rose-500/10 border-rose-500/25'
@@ -78,7 +79,7 @@ function HotlistCard({ item, onEvaluate }) {
           {isBullish ? '▲ BULLISH' : '▼ BEARISH'}
         </span>
         {item.rank && (
-          <span className="text-[10px] text-slate-600 font-mono">#{item.rank}</span>
+          <span className="text-xs text-slate-600 font-mono">#{item.rank}</span>
         )}
       </div>
 
@@ -86,7 +87,7 @@ function HotlistCard({ item, onEvaluate }) {
       {item.catalyst_event && (
         <div className="flex items-start gap-1.5">
           <Zap size={10} className="text-amber-400 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-amber-300/80 leading-relaxed font-medium">
+          <p className="text-sm text-amber-200/90 leading-relaxed font-medium">
             {item.catalyst_event}
           </p>
         </div>
@@ -95,16 +96,16 @@ function HotlistCard({ item, onEvaluate }) {
       {/* Intraday thesis */}
       {item.intraday_thesis && (
         <div className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
             Intraday Thesis
           </p>
-          <p className={`text-xs text-slate-300 leading-relaxed ${!expanded ? 'line-clamp-3' : ''}`}>
+          <p className={`text-sm text-slate-300 leading-relaxed ${!expanded ? 'line-clamp-3' : ''}`}>
             {item.intraday_thesis}
           </p>
           {item.intraday_thesis.length > 120 && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="text-[10px] text-purple-400 hover:text-purple-300 mt-1 transition-colors"
+              className="text-xs text-purple-400 hover:text-purple-300 mt-1 transition-colors"
             >
               {expanded ? 'Show less' : 'Show more'}
             </button>
@@ -116,7 +117,7 @@ function HotlistCard({ item, onEvaluate }) {
       {item.news_source_evidence && (
         <div className="flex items-start gap-1.5">
           <Newspaper size={10} className="text-slate-600 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-slate-600 leading-relaxed italic">{item.news_source_evidence}</p>
+          <p className="text-sm text-slate-500 leading-relaxed italic">{item.news_source_evidence}</p>
         </div>
       )}
 
@@ -124,7 +125,7 @@ function HotlistCard({ item, onEvaluate }) {
       {item.key_risk && (
         <div className="flex items-start gap-1.5">
           <AlertCircle size={10} className="text-rose-400/60 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-slate-600 leading-relaxed">{item.key_risk}</p>
+          <p className="text-sm text-slate-500 leading-relaxed">{item.key_risk}</p>
         </div>
       )}
 
@@ -148,7 +149,7 @@ function HotlistCard({ item, onEvaluate }) {
 function useCountdown(targetIso) {
   const [label, setLabel] = useState('');
   useEffect(() => {
-    if (!targetIso) { setLabel(''); return; }
+    if (!targetIso) return undefined;
     const update = () => {
       const diff = new Date(targetIso) - Date.now();
       if (diff <= 0) { setLabel('now'); return; }
@@ -156,11 +157,14 @@ function useCountdown(targetIso) {
       const m = Math.floor((diff % 3600000) / 60000);
       setLabel(h > 0 ? `${h}h ${m}m` : `${m}m`);
     };
-    update();
+    const first = setTimeout(update, 0);
     const timer = setInterval(update, 30000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
   }, [targetIso]);
-  return label;
+  return targetIso ? label : '';
 }
 
 export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
@@ -206,7 +210,7 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
     return (
       <div className="py-12 flex items-center justify-center gap-2 text-slate-600 text-sm">
         <RefreshCw size={14} className="animate-spin" />
-        Loading pre-market intelligence…
+        Loading intraday intelligence…
       </div>
     );
   }
@@ -219,13 +223,13 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
         <div>
           <h2 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
             <Globe size={14} className="text-cyan-400" />
-            Pre-Market Intelligence — {session} Session
+            Intraday's Play — {session} Session
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 mt-0.5">
             Geopolitical &amp; macro news sweep · Daily hotlist · Expires at market close
           </p>
           {data?.run_timestamp && (
-            <p className="text-[10px] text-slate-700 mt-1 flex items-center gap-1">
+            <p className="text-xs text-slate-700 mt-1 flex items-center gap-1">
               <Clock size={9} />
               Last run: {new Date(data.run_timestamp).toLocaleString(undefined, {
                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -268,12 +272,12 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
       {/* Macro context */}
       {data?.macro_context && (
         <div className="bg-slate-900 border border-cyan-500/15 rounded-xl px-4 py-3">
-          <p className="text-[10px] font-semibold text-cyan-500 uppercase tracking-wider mb-1.5">
+          <p className="text-xs font-semibold text-cyan-500 uppercase tracking-wider mb-1.5">
             Today's Macro Context
           </p>
-          <p className="text-xs text-slate-400 leading-relaxed">{data.macro_context}</p>
+          <p className="text-sm text-slate-300 leading-relaxed">{data.macro_context}</p>
           {data.analyst_note && (
-            <p className="text-[11px] text-slate-500 leading-relaxed mt-2 italic">
+            <p className="text-sm text-slate-400 leading-relaxed mt-2 italic">
               {data.analyst_note}
             </p>
           )}
@@ -318,18 +322,21 @@ export default function PreMarketRadar({ session = 'US', onEvaluateTicker }) {
 
       {/* Hotlist grid */}
       {hotlist.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {hotlist.map(item => (
-            <HotlistCard
-              key={item.id ?? item.ticker}
-              item={item}
-              onEvaluate={onEvaluateTicker}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {hotlist.map(item => (
+              <HotlistCard
+                key={item.id ?? item.ticker}
+                item={item}
+                onEvaluate={onEvaluateTicker}
+              />
+            ))}
+          </div>
+          <AdInFeed minHeight={120} />
+        </>
       )}
 
-      <p className="text-[11px] text-slate-700 text-right">
+      <p className="text-xs text-slate-700 text-right">
         {sessionActive
           ? 'Valid for current trading session only · expires at market close'
           : 'Prior session data · fresh hotlist generated at next market open'}

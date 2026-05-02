@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Globe, TrendingUp, TrendingDown } from 'lucide-react';
 import PreMarketRadar from '../components/PreMarketRadar';
 import AdLeaderboard from '../components/ads/AdLeaderboard';
@@ -8,12 +9,12 @@ const SESSIONS = [
   { id: 'India', label: 'India Session', sublabel: 'NSE / BSE · 9:15 AM IST',      icon: TrendingDown },
 ];
 
-export default function PreMarket({ onNavigate, onEvaluateTicker }) {
+export default function PreMarket() {
+  const navigate = useNavigate();
   const [session, setSession] = useState('US');
 
   const handleEvaluate = (ticker) => {
-    if (onEvaluateTicker) onEvaluateTicker(ticker);
-    else if (onNavigate) onNavigate('dashboard');
+    navigate(`/analyze?ticker=${encodeURIComponent(ticker)}`);
   };
 
   return (
@@ -24,7 +25,7 @@ export default function PreMarket({ onNavigate, onEvaluateTicker }) {
         <div>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Globe size={18} className="text-cyan-400" />
-            Pre-Market Intelligence
+            Intraday's Play
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Geopolitical news &amp; macro catalyst sweep · Auto-runs 1 hour before market open
@@ -35,16 +36,16 @@ export default function PreMarket({ onNavigate, onEvaluateTicker }) {
       {/* How it works strip */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+          <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-1.5">
             What this agent does
           </p>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-300 leading-relaxed">
             Sweeps overnight geopolitical events, central bank decisions, commodity moves, and
             scheduled earnings releases before market open. Derives a daily BULLISH / BEARISH hotlist
             of stocks expected to move today based on confirmed news catalysts.
           </p>
         </div>
-        <div className="shrink-0 flex flex-col gap-1 justify-center text-[10px] text-slate-600">
+        <div className="shrink-0 flex flex-col gap-1 justify-center text-xs sm:text-sm text-slate-500">
           <p><span className="text-cyan-500 font-bold">US</span> — runs at 8:30 AM ET (13:30 UTC)</p>
           <p><span className="text-orange-500 font-bold">India</span> — runs at 8:15 AM IST (02:45 UTC)</p>
           <p className="text-slate-700 mt-1">Hotlist expires at market close · Mon–Fri only</p>
@@ -69,7 +70,7 @@ export default function PreMarket({ onNavigate, onEvaluateTicker }) {
               <Icon size={13} />
               <span className="flex flex-col items-start text-left">
                 <span className="leading-tight">{s.label}</span>
-                <span className={`text-[10px] leading-tight ${active ? 'text-cyan-600' : 'text-slate-700'}`}>
+                <span className={`text-xs leading-tight ${active ? 'text-cyan-600' : 'text-slate-700'}`}>
                   {s.sublabel}
                 </span>
               </span>

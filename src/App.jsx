@@ -1,5 +1,7 @@
-import { useState, Component } from 'react';
-import Sidebar, { MobileNav } from './components/Sidebar';
+import { Component } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import Layout from './components/Layout';
+import Analyze from './pages/Analyze';
 import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
 import ShadowLab from './pages/ShadowLab';
@@ -9,7 +11,6 @@ import PreMarket from './pages/PreMarket';
 import RecentIntelligence from './pages/RecentIntelligence';
 import { BackendProvider } from './context/BackendContext';
 import { AdProvider } from './components/ads/AdProvider';
-import AdAnchor from './components/ads/AdAnchor';
 import CookieConsent from './components/CookieConsent';
 import './App.css';
 
@@ -38,58 +39,27 @@ class ErrorBoundary extends Component {
   }
 }
 
-const PAGES = {
-  dashboard:     Dashboard,
-  portfolio:     Portfolio,
-  'shadow-lab':  ShadowLab,
-  'ai-radar':    AiRadar,
-  'pre-market':  PreMarket,
-  intelligence:  RecentIntelligence,
-  settings:      Settings,
-};
-
 export default function App() {
-  const [page,            setPage]            = useState('dashboard');
-  const [hotTicker,       setHotTicker]       = useState('');
-
-  const handleEvaluateTicker = (ticker) => {
-    setHotTicker(ticker);
-    setPage('dashboard');
-  };
-
-  const renderPage = () => {
-    switch (page) {
-      case 'dashboard':
-        return (
-          <Dashboard
-            onNavigate={setPage}
-            externalPrefilledTicker={hotTicker}
-            onExternalPrefilledConsumed={() => setHotTicker('')}
-          />
-        );
-      case 'pre-market':
-        return <PreMarket onNavigate={setPage} onEvaluateTicker={handleEvaluateTicker} />;
-      default: {
-        const Page = PAGES[page] ?? Dashboard;
-        return <Page onNavigate={setPage} />;
-      }
-    }
-  };
-
   return (
     <ErrorBoundary>
       <BackendProvider>
         <AdProvider>
-          <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: '#020617', color: '#e2e8f0' }}>
-            <Sidebar currentPage={page} onNavigate={setPage} />
-            <main style={{ flex: 1, overflowY: 'auto' }} className="pb-16 md:pb-0">
-              <ErrorBoundary>
-                {renderPage()}
-              </ErrorBoundary>
-            </main>
-            <MobileNav currentPage={page} onNavigate={setPage} />
-            <AdAnchor />
-          </div>
+          <BrowserRouter>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route index element={<Navigate to="/analyze" replace />} />
+                <Route path="analyze" element={<Analyze />} />
+                <Route path="home" element={<Dashboard />} />
+                <Route path="holdings" element={<Portfolio />} />
+                <Route path="today" element={<PreMarket />} />
+                <Route path="discovery" element={<AiRadar />} />
+                <Route path="history" element={<RecentIntelligence />} />
+                <Route path="backtest" element={<ShadowLab />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/analyze" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
           <CookieConsent />
         </AdProvider>
       </BackendProvider>

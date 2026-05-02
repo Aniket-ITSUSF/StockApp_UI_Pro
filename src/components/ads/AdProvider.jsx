@@ -1,25 +1,29 @@
-import { createContext, useContext, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAdsEnabled } from '../../hooks/useAdsEnabled';
+import { ADSENSE_SCRIPT_SRC } from '../../utils/adsense';
 import { readConsent, consentGivenForPersonalized } from '../../utils/consent';
-
-// AdSense loader script is in index.html so AdSense's crawler can verify the site
-// on first load. AdUnit gates whether to call adsbygoogle.push({}) based on consent.
-const AdContext = createContext({ adsEnabled: false, personalized: false, consentChosen: false });
+import { AdContext } from './adContext';
 
 export function AdProvider({ children }) {
   const adsEnabled = useAdsEnabled();
-  // Read once at mount — CookieConsent reloads the page on choice, so this stays in sync.
-  const consentChoice = readConsent();
+  const [consentChoice, setConsentChoice] = useState(() => readConsent());
   const consentChosen = consentChoice !== null;
-  const personalized  = consentGivenForPersonalized();
+  const personalized  = consentChoice ? consentGivenForPersonalized(consentChoice) : false;
+
+  useEffect(() => {
+    if (!adsEnabled || !consentChosen || import.meta.env.DEV) return;
+    if (document.querySelector(`script[src="${ADSENSE_SCRIPT_SRC}"]`)) return;
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = ADSENSE_SCRIPT_SRC;
+    script.crossOrigin = 'anonymous';
+    document.head.appendChild(script);
+  }, [adsEnabled, consentChosen]);
 
   const value = useMemo(
-    () => ({ adsEnabled, personalized, consentChosen }),
-    [adsEnabled, personalized, consentChosen]
+    () => ({ adsEnabled, personalized, consentChosen, consentChoice, setConsentChoice }),
+    [adsEnabled, personalized, consentChosen, consentChoice]
   );
   return <AdContext.Provider value={value}>{children}</AdContext.Provider>;
-}
-
-export function useAdContext() {
-  return useContext(AdContext);
 }

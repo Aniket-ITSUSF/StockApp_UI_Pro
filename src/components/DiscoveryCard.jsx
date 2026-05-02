@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Zap, Clock, AlertCircle, ArrowRight } from 'lucide-react';
+import Tooltip from './Tooltip';
 
 const CONVICTION_META = {
   HIGH:   { cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', dot: 'bg-emerald-400' },
@@ -35,11 +36,11 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
             <span className="text-lg font-bold tracking-widest text-slate-100 font-mono">
               {disc.ticker}
             </span>
-            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${conviction.cls}`}>
+            <span className={`inline-flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-full border ${conviction.cls}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${conviction.dot}`} />
               {disc.conviction} conviction
             </span>
-            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${market.cls}`}>
+            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${market.cls}`}>
               {market.label}
             </span>
           </div>
@@ -49,18 +50,24 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
         </div>
 
         {disc.estimated_recognition_lag_weeks != null && (
-          <div className="shrink-0 flex flex-col items-center bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5">
-            <Clock size={11} className="text-slate-500 mb-0.5" />
-            <span className="text-sm font-bold text-slate-200 tabular-nums leading-none">
-              {disc.estimated_recognition_lag_weeks}w
-            </span>
-            <span className="text-[9px] text-slate-600 leading-none mt-0.5">lag</span>
-          </div>
+          <Tooltip
+            width={236}
+            align="right"
+            content={`AI expects this linked-share idea may take about ${disc.estimated_recognition_lag_weeks} weeks to show up in price action. It is an estimate, not a guarantee.`}
+          >
+            <div className="shrink-0 flex flex-col items-center bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 cursor-help hover:border-purple-500/30 transition-colors">
+              <Clock size={11} className="text-purple-400 mb-0.5" />
+              <span className="text-sm font-bold text-slate-100 tabular-nums leading-none">
+                {disc.estimated_recognition_lag_weeks}w
+              </span>
+              <span className="text-xs text-slate-500 leading-none mt-0.5">play out</span>
+            </div>
+          </Tooltip>
         )}
       </div>
 
       {/* Catalyst origin */}
-      <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500">
         <Zap size={10} className="text-purple-400 shrink-0" />
         <span>Discovered via</span>
         <span className="font-mono font-bold text-purple-300">{disc.primary_ticker}</span>
@@ -70,14 +77,14 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
       {/* Causal chain */}
       {disc.causal_chain && (
         <div className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Why AI found this</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Why AI found this</p>
           <p className={`text-xs text-slate-300 leading-relaxed ${!expanded ? 'line-clamp-3' : ''}`}>
             {disc.causal_chain}
           </p>
           {disc.causal_chain.length > 120 && (
             <button
               onClick={() => setExpanded(v => !v)}
-              className="text-[10px] text-purple-400 hover:text-purple-300 mt-1 transition-colors"
+              className="text-xs text-purple-400 hover:text-purple-300 mt-1 transition-colors"
             >
               {expanded ? 'Show less' : 'Show more'}
             </button>
@@ -88,7 +95,7 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
       {/* Crowd attention + risk caveat */}
       <div className="flex items-center gap-2 flex-wrap">
         {disc.crowd_attention_level && (
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
             disc.crowd_attention_level === 'LOW'
               ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
               : disc.crowd_attention_level === 'MEDIUM'
@@ -103,7 +110,7 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
       {disc.risk_caveat && (
         <div className="flex items-start gap-1.5">
           <AlertCircle size={10} className="text-rose-400/60 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-slate-600 leading-relaxed">{disc.risk_caveat}</p>
+          <p className="text-sm text-slate-400 leading-relaxed">{disc.risk_caveat}</p>
         </div>
       )}
 

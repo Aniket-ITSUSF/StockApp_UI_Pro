@@ -75,7 +75,7 @@ export default function DiscoveryRadar({ onEvaluateTicker }) {
         ))}
       </div>
 
-      <p className="text-[11px] text-slate-700 text-right">
+      <p className="text-xs text-slate-700 text-right">
         Deduplicated by ticker · most recent evaluation wins · {discoveries.length} unique opportunities
       </p>
     </div>

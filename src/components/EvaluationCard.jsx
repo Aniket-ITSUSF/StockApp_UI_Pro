@@ -4,13 +4,14 @@ import CircularProgress from './CircularProgress';
 import AgentVoteGrid from './AgentVoteGrid';
 import Tooltip from './Tooltip';
 import SentimentStrip from './SentimentStrip';
+import LinkedSharesStrip from './LinkedSharesStrip';
 
 const ACTION_BADGE = {
   // ── Legacy vote-pipeline actions ──────────────────────────────────────────
   EXECUTED: {
     text: 'EXECUTED',
     cls:  'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-    tip:  'All 10 agents voted, every risk gate was cleared, and the score beat the threshold. This trade was opened in the paper portfolio.',
+    tip:  'All 10 agents voted, every risk gate was cleared, and the score beat the threshold. This trade is saved only in your private browser portfolio.',
   },
   REJECTED_CONSENSUS: {
     text: 'REJECTED',
@@ -36,7 +37,7 @@ const ACTION_BADGE = {
   BUY: {
     text: 'BUY',
     cls:  'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-    tip:  'The committee voted to buy. All gates passed, the AI news analysis was positive, and the final score cleared the threshold. A paper position was opened.',
+    tip:  'The committee voted to buy. The suggested entry is saved only in your private browser portfolio.',
   },
   HOLD: {
     text: 'HOLD',
@@ -72,6 +73,86 @@ const REGIME_TIP = {
   HIGH_VOLATILITY: 'Elevated VIX. System shifts to defensive mean-reversion stance. Fewer trades will clear the threshold.',
 };
 
+const ORACLE_FRAMES = [
+  ['1_day', '1D'],
+  ['7_day', '7D'],
+  ['30_day', '30D'],
+];
+
+function getOracleFrames(oracle) {
+  if (!oracle) return [];
+  return ORACLE_FRAMES
+    .map(([key, label]) => {
+      const frame = oracle[key];
+      return frame ? { key, label, ...frame } : null;
+    })
+    .filter(Boolean);
+}
+
+function fmtPct(value) {
+  return value == null ? 'N/A' : `${(value * 100).toFixed(2)}%`;
+}
+
+function fmtPrice(value) {
+  return value == null ? 'N/A' : value.toFixed(2);
+}
+
+function fmtDisplayPrice(value, ticker) {
+  if (value == null) return null;
+  const symbol = ticker?.toUpperCase().endsWith('.NS') || ticker?.toUpperCase().endsWith('.BO') ? '₹' : '$';
+  return `${symbol}${fmtPrice(value)}`;
+}
+
+function OracleCones({ oracle }) {
+  const frames = getOracleFrames(oracle);
+  if (!frames.length) return null;
+
+  return (
+    <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2">
+      <div className="flex flex-col min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between gap-1.5 mb-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-violet-300">
+          Options-Based Future Prediction
+        </span>
+        <span className="text-xs text-slate-500">ATM IV · 68% probability range</span>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(7.25rem,1fr))] gap-2">
+        {frames.map((frame) => {
+          const tip = (
+            <div className="flex flex-col gap-1.5 text-xs">
+              <p className="font-semibold text-slate-100">{frame.label} Implied Move</p>
+              <p className="text-slate-300">
+                Options imply a <span className="text-violet-300 font-semibold">±{fmtPct(frame.move_pct)}</span> move by {frame.expiry}.
+              </p>
+              <p className="text-slate-400">
+                IV: {fmtPct(frame.atm_iv)} · DTE: {frame.dte} · Move: {fmtPrice(frame.move_abs)}
+              </p>
+              <p className="text-slate-500">
+                Calculated from at-the-money option implied volatility using Price x IV x sqrt(DTE / 365).
+              </p>
+            </div>
+          );
+
+          return (
+            <Tooltip key={frame.key} content={tip} width={248} position="bottom">
+              <div className="cursor-default rounded-md border border-slate-700 bg-slate-950/60 px-2.5 py-2 hover:border-violet-500/30 transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-200">{frame.label}</span>
+                  <span className="text-xs font-extrabold text-violet-200">±{fmtPct(frame.move_pct)}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-2 font-mono text-xs font-extrabold">
+                  <span className="text-rose-300">{fmtPrice(frame.lower)}</span>
+                  <span className="text-slate-600">to</span>
+                  <span className="text-emerald-300">{fmtPrice(frame.upper)}</span>
+                </div>
+              </div>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function buildReasoning(ev) {
   const parts = [];
   if (ev.regime)            parts.push(`Regime: ${ev.regime}`);
@@ -86,7 +167,7 @@ function buildReasoning(ev) {
   return parts.length ? parts.join(' · ') : 'No additional context available.';
 }
 
-export default function EvaluationCard({ evaluation: ev, sentimentLoading = false }) {
+export default function EvaluationCard({ evaluation: ev, sentimentLoading = false, discoveryLoading = false }) {
   const [open, setOpen] = useState(false);
   if (!ev) return null;
 
@@ -106,42 +187,23 @@ export default function EvaluationCard({ evaluation: ev, sentimentLoading = fals
   const regimeTip = REGIME_TIP[ev.regime] ?? 'Current market state determines agent vote weighting.';
 
   const oracle = ev.oracle_prediction?.status === 'SUCCESS' ? ev.oracle_prediction.data : null;
-  const oracleTip = oracle ? (
-    <div className="flex flex-col gap-2">
-      <p className="font-semibold text-slate-100 text-[11px] uppercase tracking-wider">Options Market Prediction</p>
-      <p className="text-slate-300">
-        The options market is "pricing in" an expected move of
-        {' '}<span className="text-violet-300 font-semibold">±{(oracle.expected_move_pct * 100).toFixed(2)}%</span>
-        {' '}(±${oracle.expected_move_dollar.toFixed(2)}) before {oracle.expiry} ({oracle.dte} days).
-      </p>
-      <div className="bg-slate-900 rounded-md px-3 py-2 flex flex-col gap-1">
-        <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">68% Probability Range</p>
-        <div className="flex justify-between font-mono text-xs">
-          <span className="text-emerald-400">↑ ${oracle.upper_bound.toFixed(2)}</span>
-          <span className="text-rose-400">↓ ${oracle.lower_bound.toFixed(2)}</span>
-        </div>
-      </div>
-      <p className="text-slate-400 text-[11px]">
-        <span className="font-semibold text-slate-300">ATM IV:</span> {(oracle.average_atm_iv * 100).toFixed(1)}%
-      </p>
-      <p className="text-slate-500 text-[11px] border-t border-slate-700 pt-1.5">
-        Calculated from options contracts closest to the current price.
-        Formula: Expected Move = Price × IV × √(DTE ÷ 365).
-        Technical agents use these bounds to veto signals that contradict the market’s forecast.
-      </p>
-    </div>
-  ) : null;
+  const currentPrice = ev.current_price ?? ev.entry_price ?? oracle?.current_price;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 hover:border-slate-700 transition-colors duration-150">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 hover:border-slate-700 transition-colors duration-150 min-w-0">
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 min-w-0">
         <div className="flex flex-col gap-1.5 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg font-bold tracking-widest text-slate-100 font-mono">
               {ev.ticker}
             </span>
+            {currentPrice != null && (
+              <span className="cursor-default text-xs font-extrabold px-2.5 py-1 rounded-full border bg-emerald-500/15 text-emerald-200 border-emerald-400/30 shadow-[0_0_14px_-8px] shadow-emerald-300">
+                Current {fmtDisplayPrice(currentPrice, ev.ticker)}
+              </span>
+            )}
             <Tooltip content={badge.tip} width={224} position="bottom">
               <span className={`cursor-default text-xs font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${badge.cls}`}>
                 {action === 'ANALYZING' && <Loader2 size={10} className="animate-spin" />}
@@ -156,9 +218,9 @@ export default function EvaluationCard({ evaluation: ev, sentimentLoading = fals
         <Tooltip content={ALPHA_TIP} width={240} align="right">
           <div className="flex flex-col items-center shrink-0 cursor-default">
             <CircularProgress score={alpha} size={68} />
-            <span className="text-[10px] text-slate-500 mt-1 font-medium">ALPHA</span>
+            <span className="text-xs text-slate-500 mt-1 font-medium">ALPHA</span>
             {ev.cognitive_bonus != null && ev.cognitive_bonus !== 0 && (
-              <span className={`text-[9px] font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <span className={`text-xs font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {ev.cognitive_bonus > 0 ? '+' : ''}{ev.cognitive_bonus.toFixed(1)} AI
               </span>
             )}
@@ -187,18 +249,17 @@ export default function EvaluationCard({ evaluation: ev, sentimentLoading = fals
               </span>
             </Tooltip>
           )}
-          {oracle && (
-            <Tooltip content={oracleTip} width={296} position="bottom">
-              <span className="cursor-default text-xs font-medium px-2 py-0.5 rounded-full border bg-violet-500/10 text-violet-300 border-violet-500/20">
-                Future Prediction: ±{(oracle.expected_move_pct * 100).toFixed(2)}%
-              </span>
-            </Tooltip>
-          )}
         </div>
       )}
 
+      {/* Options oracle prediction cones */}
+      <OracleCones oracle={oracle} />
+
       {/* Sentiment strip */}
       <SentimentStrip ev={ev} loading={sentimentLoading} />
+
+      {/* Linked shares strip */}
+      <LinkedSharesStrip ev={ev} loading={discoveryLoading} />
 
       {/* Agent voting grid */}
       <AgentVoteGrid evaluation={ev} />

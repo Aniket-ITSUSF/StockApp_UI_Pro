@@ -20,6 +20,8 @@ export const getPortfolioSummary    = ()  => api.get('/portfolio/summary');
 export const refreshPortfolioPrices = ()  => api.post('/portfolio/refresh');
 export const evaluateTicker      = (ticker)  => api.post(`/evaluate/${ticker.toUpperCase().trim()}`);
 export const evaluateTickerFast  = (ticker)  => api.post(`/evaluate/${ticker.toUpperCase().trim()}/fast`);
+export const evaluateTickerSentiment = (ticker) => api.post(`/evaluate/${ticker.toUpperCase().trim()}/sentiment`);
+export const evaluateTickerDiscovery = (ticker) => api.post(`/evaluate/${ticker.toUpperCase().trim()}/discovery`);
 export const getRecentEvaluations = ()       => api.get('/evaluations/recent');
 export const getCurrentPrice     = (ticker)  => api.get(`/price/${ticker.toUpperCase().trim()}`);
 export const getBatchPrices      = (tickers) => api.post('/prices/batch', { tickers });

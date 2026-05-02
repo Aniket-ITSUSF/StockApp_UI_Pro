@@ -43,7 +43,7 @@ export default function Settings() {
               {statusMeta.label}
             </p>
             {lastChecked && (
-              <p className="text-[11px] text-slate-600 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Last checked {lastChecked.toLocaleTimeString()}
               </p>
             )}
@@ -92,7 +92,7 @@ export default function Settings() {
               <span className="text-sm text-slate-200 font-medium">{id}</span>
               <span className="text-xs text-slate-500 ml-2">{desc}</span>
             </div>
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
               tier === 'Veto'   ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
               tier === 'Tier 2' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                                   'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'

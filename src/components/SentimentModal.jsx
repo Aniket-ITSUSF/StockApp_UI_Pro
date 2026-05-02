@@ -14,7 +14,7 @@ function PetersonGauge({ score }) {
   const color = score >= 0.2 ? 'bg-emerald-500' : score <= -0.2 ? 'bg-rose-500' : 'bg-amber-400';
   return (
     <div>
-      <div className="flex justify-between text-[10px] text-slate-500 mb-1.5 font-mono">
+      <div className="flex justify-between text-xs text-slate-500 mb-1.5 font-mono">
         <span>−1.0 BEARISH</span>
         <span>NEUTRAL 0</span>
         <span>BULLISH +1.0</span>
@@ -97,7 +97,7 @@ export default function SentimentModal({ ev, onClose }) {
           {/* Family summary */}
           {ev.family_summary && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
-              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-2">AI Analysis Summary</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">AI Analysis Summary</p>
               <p className="text-sm text-slate-300 leading-relaxed">{ev.family_summary}</p>
             </div>
           )}
@@ -129,17 +129,17 @@ export default function SentimentModal({ ev, onClose }) {
           {/* Scores row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-2">Peterson Score</p>
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mb-2">Peterson Score</p>
               <PetersonGauge score={score} />
             </div>
             <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 flex flex-col justify-between">
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-1">Cognitive Bonus</p>
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold mb-1">Cognitive Bonus</p>
               <p className={`text-2xl font-bold font-mono tabular-nums ${
                 bonus > 0 ? 'text-emerald-400' : bonus < 0 ? 'text-rose-400' : 'text-slate-400'
               }`}>
                 {bonus >= 0 ? '+' : ''}{bonus.toFixed(2)}
               </p>
-              <p className="text-[10px] text-slate-600 mt-1">Applied to alpha score (±15 max)</p>
+              <p className="text-xs text-slate-600 mt-1">Applied to alpha score (±15 max)</p>
             </div>
           </div>
 
@@ -149,11 +149,11 @@ export default function SentimentModal({ ev, onClose }) {
           {/* Decision path */}
           {Array.isArray(ev.decision_path) && ev.decision_path.length > 0 && (
             <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3">
-              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">5-Step Decision Path</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">5-Step Decision Path</p>
               <ol className="flex flex-col gap-2.5">
                 {ev.decision_path.map((step, i) => (
                   <li key={i} className="flex gap-2.5 items-start">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[10px] font-bold text-purple-400">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xs font-bold text-purple-400">
                       {i + 1}
                     </span>
                     <p className="text-xs text-slate-400 leading-relaxed pt-0.5">{step}</p>
@@ -165,7 +165,7 @@ export default function SentimentModal({ ev, onClose }) {
 
           {/* What this means */}
           <div className="bg-purple-500/5 border border-purple-500/15 rounded-xl px-4 py-3">
-            <p className="text-[10px] font-semibold text-purple-400/70 uppercase tracking-widest mb-1">How this affects the trade</p>
+            <p className="text-xs font-semibold text-purple-400/70 uppercase tracking-widest mb-1">How this affects the trade</p>
             <p className="text-xs text-slate-400 leading-relaxed">
               The Peterson Score measures the factual quality of news coverage on a scale of −1 (verified negative facts) to +1 (verified positive facts).
               The Cognitive Bonus adjusts the committee's alpha score by up to ±15 points based on this signal.

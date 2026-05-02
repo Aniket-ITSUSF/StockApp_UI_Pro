@@ -9,7 +9,7 @@ export default function HotTradesTile({ item, onEvaluate }) {
   return (
     <div
       onClick={() => onEvaluate && onEvaluate(item.ticker)}
-      className={`relative bg-slate-900 border rounded-xl p-3 flex flex-col gap-2 cursor-pointer select-none transition-all duration-150 hover:scale-[1.02] hover:shadow-lg active:scale-100 ${
+      className={`relative min-w-0 bg-slate-900 border rounded-xl p-3 flex flex-col gap-2 cursor-pointer select-none transition-all duration-150 hover:scale-[1.02] hover:shadow-lg active:scale-100 ${
         isBullish
           ? 'border-emerald-500/20 hover:border-emerald-500/40 hover:bg-emerald-500/5'
           : 'border-rose-500/20 hover:border-rose-500/40 hover:bg-rose-500/5'
@@ -29,26 +29,26 @@ export default function HotTradesTile({ item, onEvaluate }) {
         </button>
 
         <div
-          className="pointer-events-none absolute bottom-full right-0 mb-2 w-60 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          className="pointer-events-none absolute bottom-full left-0 sm:left-auto sm:right-0 mb-2 w-[min(18rem,calc(100vw-2rem))] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
           style={{ zIndex: 9999 }}
         >
-          <div className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 shadow-2xl text-left">
+          <div className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 shadow-2xl text-left break-words">
             {item.catalyst_event && (
               <>
-                <p className="text-[9px] font-bold text-amber-400 uppercase tracking-wider mb-1">Catalyst</p>
-                <p className="text-[11px] text-slate-300 leading-relaxed">{item.catalyst_event}</p>
+                <p className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">Catalyst</p>
+                <p className="text-xs text-slate-300 leading-relaxed">{item.catalyst_event}</p>
               </>
             )}
             {item.intraday_thesis && (
               <>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-2 mb-1">Thesis</p>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{item.intraday_thesis}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-2 mb-1">Thesis</p>
+                <p className="text-xs text-slate-400 leading-relaxed">{item.intraday_thesis}</p>
               </>
             )}
             {item.key_risk && (
               <>
-                <p className="text-[9px] font-bold text-rose-400 uppercase tracking-wider mt-2 mb-1">Key Risk</p>
-                <p className="text-[11px] text-slate-500 leading-relaxed">{item.key_risk}</p>
+                <p className="text-xs font-bold text-rose-400 uppercase tracking-wider mt-2 mb-1">Key Risk</p>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.key_risk}</p>
               </>
             )}
           </div>
@@ -67,7 +67,7 @@ export default function HotTradesTile({ item, onEvaluate }) {
             {item.ticker}
           </span>
         ) : (
-          <span className="text-[11px] font-semibold text-slate-300 leading-tight truncate" title={`Unverified ticker: ${item.ticker}`}>
+          <span className="text-xs font-semibold text-slate-300 leading-tight truncate" title={`Unverified ticker: ${item.ticker}`}>
             {item.company_name || item.ticker}
             <AlertTriangle size={8} className="inline ml-1 text-amber-500 shrink-0" />
           </span>
@@ -82,7 +82,7 @@ export default function HotTradesTile({ item, onEvaluate }) {
 
         {/* Left — direction + confidence + expected move */}
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-          <span className={`self-start text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+          <span className={`self-start text-xs font-bold px-1.5 py-0.5 rounded-full border ${
             isBullish
               ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
               : 'text-rose-400 bg-rose-500/10 border-rose-500/20'
@@ -103,7 +103,7 @@ export default function HotTradesTile({ item, onEvaluate }) {
           )}
 
           {item.expected_move_pct != null && (
-            <span className={`text-[10px] font-mono tabular-nums font-semibold ${
+            <span className={`text-xs font-mono tabular-nums font-semibold ${
               isBullish ? 'text-emerald-500' : 'text-rose-500'
             }`}>
               {isBullish ? '+' : ''}{item.expected_move_pct}%
