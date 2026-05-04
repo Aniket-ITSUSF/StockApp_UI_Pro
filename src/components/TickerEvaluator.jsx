@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Loader2, AlertCircle, Zap, ChevronDown } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Zap, ChevronDown, GitBranch, Sparkles } from 'lucide-react';
 import {
   evaluateTickerDiscovery,
   evaluateTickerFast,
@@ -69,6 +69,12 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
   const [loading, setLoading]         = useState(false);
   const [sentimentLoading, setSentimentLoading] = useState(false);
   const [discoveryLoading, setDiscoveryLoading] = useState(false);
+  // Discovery is no longer fired automatically - the user opts in via the
+  // "Find related trades" button below the card. We track whether they've
+  // already done so for the current ticker so we can hide the button after
+  // the first click (cached or fresh, the response replaces the placeholder).
+  const [discoveryFetched, setDiscoveryFetched] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState(null);
   const [result, setResult]           = useState(null);
   const [error, setError]             = useState(null);
   const inputRef = useRef(null);
@@ -104,67 +110,98 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
     return base;
   };
 
+  // Holds the current evaluation in a ref so the discovery handler can merge
+  // a fresh patch into the latest state even if React hasn't flushed the
+  // most recent setResult yet (cached fast+sentiment can update result twice
+  // in the same tick).
+  const latestResultRef = useRef(null);
+
   const run = async (t) => {
     const sym = buildSym(t ?? ticker);
     if (!sym) return;
     setLoading(true);
     setSentimentLoading(false);
     setDiscoveryLoading(false);
+    // New ticker — reset discovery opt-in so the button reappears.
+    setDiscoveryFetched(false);
+    setDiscoveryError(null);
     setError(null);
     setResult(null);
+    latestResultRef.current = null;
     try {
       // Stage 1: math-only fast evaluation - show the card immediately.
       const fastRes = await evaluateTickerFast(sym);
       let latest = mapVotes(fastRes.data, sym);
       const mergeLatest = (patch) => {
-        latest = mapVotes({ ...latest, ...patch, ticker: sym }, sym);
-        setResult(latest);
+        const next = mapVotes({ ...latest, ...patch, ticker: sym }, sym);
+        latest = next;
+        latestResultRef.current = next;
+        setResult(next);
+        return next;
       };
 
-      const partial = latest;
-      setResult(partial);
-      if (onNewEvaluation) onNewEvaluation(partial);
+      latestResultRef.current = latest;
+      setResult(latest);
+      if (onNewEvaluation) onNewEvaluation(latest);
       setLoading(false);
 
-      // Stage 2: sentiment and discovery are independent cache-backed calls.
+      // Stage 2: sentiment runs automatically (it's the cheap, ~1-second AI
+      // call and is critical to the headline action verdict). Discovery is
+      // NOT fired here — the user opts in via the dedicated button so we
+      // don't burn a 25-second web-search call on every analyze press.
       setSentimentLoading(true);
-      setDiscoveryLoading(true);
 
-      const sentimentPromise = evaluateTickerSentiment(sym)
-        .then((res) => {
-          mergeLatest(res.data);
-        })
-        .catch((err) => {
-          setError(err.response?.data?.detail ?? err.message ?? 'Sentiment unavailable');
-        })
-        .finally(() => setSentimentLoading(false));
-
-      const discoveryPromise = evaluateTickerDiscovery(sym)
-        .then((res) => {
-          const bestDiscovery =
-            res.data?.best_discovery ??
-            res.data?.best_discovery_opportunity ??
-            res.data?.discovery_opportunities?.[0] ??
-            null;
-          mergeLatest({
-            best_discovery: bestDiscovery,
-            linked_shares: res.data?.linked_shares ?? res.data?.discovery_opportunities ?? [],
-            discovery_report: res.data,
-          });
-        })
-        .catch(() => {
-          // Discovery is additive. Keep the technical + sentiment result visible.
-        })
-        .finally(() => setDiscoveryLoading(false));
-
-      await Promise.all([sentimentPromise, discoveryPromise]);
-      if (onNewEvaluation) onNewEvaluation(latest);
+      try {
+        const res = await evaluateTickerSentiment(sym);
+        const next = mergeLatest(res.data);
+        if (onNewEvaluation) onNewEvaluation(next);
+      } catch (err) {
+        setError(err.response?.data?.detail ?? err.message ?? 'Sentiment unavailable');
+      } finally {
+        setSentimentLoading(false);
+      }
     } catch (err) {
       setError(err.response?.data?.detail ?? err.message ?? 'Evaluation failed');
       setResult(null);
     } finally {
       setLoading(false);
       setSentimentLoading(false);
+    }
+  };
+
+  const fetchDiscovery = async () => {
+    const current = latestResultRef.current;
+    if (!current?.ticker || discoveryLoading) return;
+    setDiscoveryLoading(true);
+    setDiscoveryError(null);
+    setDiscoveryFetched(true);
+    try {
+      const res = await evaluateTickerDiscovery(current.ticker);
+      const bestDiscovery =
+        res.data?.best_discovery ??
+        res.data?.best_discovery_opportunity ??
+        res.data?.discovery_opportunities?.[0] ??
+        null;
+      const next = mapVotes(
+        {
+          ...current,
+          best_discovery: bestDiscovery,
+          linked_shares: res.data?.linked_shares ?? res.data?.discovery_opportunities ?? [],
+          discovery_report: res.data,
+          ticker: current.ticker,
+        },
+        current.ticker,
+      );
+      latestResultRef.current = next;
+      setResult(next);
+      if (onNewEvaluation) onNewEvaluation(next);
+    } catch (err) {
+      // Allow the user to retry — keep their primary evaluation visible.
+      setDiscoveryFetched(false);
+      setDiscoveryError(
+        err.response?.data?.detail ?? err.message ?? 'Could not search related trades. Try again.',
+      );
+    } finally {
       setDiscoveryLoading(false);
     }
   };
@@ -260,6 +297,56 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
           sentimentLoading={sentimentLoading}
           discoveryLoading={discoveryLoading}
         />
+      )}
+
+      {/* Manual Discovery CTA — only shown after the primary evaluation
+          renders. Cached results return in <100ms; cold compute can take
+          ~25s, so we keep this opt-in to avoid burning a web_search call on
+          every analyze press. */}
+      {result && !discoveryFetched && !discoveryLoading && (
+        <button
+          type="button"
+          onClick={fetchDiscovery}
+          className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 active:bg-cyan-500/25 text-cyan-200 text-sm font-semibold transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+          aria-label={`Find related trades for ${result.ticker}`}
+        >
+          <Sparkles size={15} className="shrink-0" />
+          <span className="truncate">
+            Find related trades for{' '}
+            <span className="font-mono font-bold">{result.ticker}</span>
+          </span>
+        </button>
+      )}
+
+      {result && discoveryLoading && (
+        <div className="mt-1 w-full flex items-start gap-2 px-3 py-2.5 rounded-lg border border-dashed border-cyan-500/30 bg-cyan-500/5 text-cyan-200">
+          <Loader2 size={14} className="animate-spin shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">
+              Searching the web for trades linked to{' '}
+              <span className="font-mono">{result.ticker}</span>…
+            </p>
+            <p className="text-xs text-cyan-300/70 mt-0.5">
+              This can take 20–30 seconds. Results are cached weekly so a repeat search is instant.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {result && discoveryError && (
+        <div className="mt-1 flex items-start gap-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+          <AlertCircle size={13} className="shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p>{discoveryError}</p>
+            <button
+              type="button"
+              onClick={fetchDiscovery}
+              className="mt-1 inline-flex items-center gap-1 text-rose-200 hover:text-rose-100 underline underline-offset-2"
+            >
+              <GitBranch size={11} /> Try again
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
