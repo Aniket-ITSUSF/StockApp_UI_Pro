@@ -327,7 +327,7 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
               <span className="font-mono">{result.ticker}</span>…
             </p>
             <p className="text-xs text-cyan-300/70 mt-0.5">
-              This can take 20–30 seconds. Results are cached weekly so a repeat search is instant.
+              This can take 20 to 30 seconds. A repeat search returns instantly.
             </p>
           </div>
         </div>

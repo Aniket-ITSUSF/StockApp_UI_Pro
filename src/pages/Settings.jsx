@@ -1,5 +1,6 @@
-import { Settings as SettingsIcon, Info, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Settings as SettingsIcon, Info, Wifi, WifiOff, RefreshCw, Compass } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
+import { useTour } from '../components/Tour';
 
 const CONFIG_ROWS = [
   { label: 'Consensus Threshold',  value: '65%' },
@@ -10,6 +11,7 @@ const CONFIG_ROWS = [
 
 export default function Settings() {
   const { status, lastChecked, retry } = useBackend();
+  const tour = useTour();
 
   const statusMeta = {
     checking:     { Icon: RefreshCw, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Checking…' },
@@ -32,6 +34,27 @@ export default function Settings() {
         <Info size={13} className="shrink-0 mt-0.5" />
         This application operates in <strong>&nbsp;Paper Trading Mode&nbsp;</strong> only.
         No real capital is ever at risk.
+      </div>
+
+      {/* Replay product tour */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-start gap-2.5">
+          <Compass size={14} className="shrink-0 mt-0.5 text-sky-400" />
+          <div>
+            <p className="text-sm font-semibold text-slate-200">Product tour</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Take the quick walkthrough again to revisit what each feature does.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => tour?.start?.()}
+          className="shrink-0 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-sky-200 bg-sky-500/10 hover:bg-sky-500/15 border border-sky-500/25 rounded-lg px-3 py-1.5 transition-colors"
+        >
+          <Compass size={12} />
+          Replay tour
+        </button>
       </div>
 
       {/* Backend connection status */}

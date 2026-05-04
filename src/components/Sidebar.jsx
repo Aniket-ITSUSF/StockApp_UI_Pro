@@ -4,14 +4,14 @@ import { useBackend } from '../context/BackendContext';
 import AdSidebar from './ads/AdSidebar';
 
 const NAV = [
-  { to: '/analyze',   label: 'Analyze',         icon: Sparkles     },
-  { to: '/home',      label: 'Home',            icon: Home         },
-  { to: '/holdings',  label: 'Holdings',        icon: Briefcase    },
-  { to: '/today',     label: "Intraday's Play", icon: Globe        },
-  { to: '/discovery', label: 'Discovery',       icon: Radar        },
-  { to: '/history',   label: 'History',         icon: Clock        },
-  { to: '/backtest',  label: 'Backtest',        icon: FlaskConical },
-  { to: '/settings',  label: 'Settings',        icon: Settings     },
+  { to: '/analyze',   label: 'Analyze',         icon: Sparkles,     tour: 'analyze'   },
+  { to: '/home',      label: 'Home',            icon: Home,         tour: 'home'      },
+  { to: '/holdings',  label: 'Holdings',        icon: Briefcase,    tour: 'holdings'  },
+  { to: '/today',     label: "Intraday's Play", icon: Globe,        tour: 'today'     },
+  { to: '/discovery', label: 'Discovery',       icon: Radar,        tour: 'discovery' },
+  { to: '/history',   label: 'History',         icon: Clock,        tour: 'history'   },
+  { to: '/backtest',  label: 'Backtest',        icon: FlaskConical, tour: 'backtest'  },
+  { to: '/settings',  label: 'Settings',        icon: Settings,     tour: 'settings'  },
 ];
 
 const MOBILE_NAV = NAV.filter(({ to }) =>
@@ -78,19 +78,20 @@ function StatusFooter() {
 
 export function MobileNav() {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 flex items-stretch safe-bottom">
+    <nav data-tour="primary-nav-mobile" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 flex items-stretch safe-bottom">
       {MOBILE_NAV.map((item) => {
         const NavIcon = item.icon;
         return (
           <NavLink
             key={item.to}
             to={item.to}
+            data-tour-nav={item.tour}
             className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors ${
               isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <NavIcon size={18} />
-            <span className="leading-none">{item.label}</span>
+            <span className="leading-tight text-center">{item.label}</span>
           </NavLink>
         );
       })}
@@ -100,7 +101,7 @@ export function MobileNav() {
 
 export default function Sidebar() {
   return (
-    <aside className="hidden md:flex w-56 bg-slate-900 border-r border-slate-800 flex-col h-full shrink-0">
+    <aside data-tour="primary-nav-desktop" className="hidden md:flex w-56 bg-slate-900 border-r border-slate-800 flex-col h-full shrink-0">
 
       {/* Logo */}
       <div className="px-4 py-5 border-b border-slate-800">
@@ -123,6 +124,7 @@ export default function Sidebar() {
             <NavLink
               key={item.to}
               to={item.to}
+              data-tour-nav={item.tour}
               className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-100 w-full text-left ${
                 isActive
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'

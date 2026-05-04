@@ -12,6 +12,7 @@ import RecentIntelligence from './pages/RecentIntelligence';
 import { BackendProvider } from './context/BackendContext';
 import { AdProvider } from './components/ads/AdProvider';
 import CookieConsent from './components/CookieConsent';
+import { TourProvider } from './components/Tour';
 import './App.css';
 
 class ErrorBoundary extends Component {
@@ -45,20 +46,22 @@ export default function App() {
       <BackendProvider>
         <AdProvider>
           <BrowserRouter>
-            <Routes>
-              <Route element={<Layout />}>
-                <Route index element={<Navigate to="/analyze" replace />} />
-                <Route path="analyze" element={<Analyze />} />
-                <Route path="home" element={<Dashboard />} />
-                <Route path="holdings" element={<Portfolio />} />
-                <Route path="today" element={<PreMarket />} />
-                <Route path="discovery" element={<AiRadar />} />
-                <Route path="history" element={<RecentIntelligence />} />
-                <Route path="backtest" element={<ShadowLab />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="*" element={<Navigate to="/analyze" replace />} />
-              </Route>
-            </Routes>
+            <TourProvider>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route index element={<Navigate to="/analyze" replace />} />
+                  <Route path="analyze" element={<Analyze />} />
+                  <Route path="home" element={<Dashboard />} />
+                  <Route path="holdings" element={<Portfolio />} />
+                  <Route path="today" element={<PreMarket />} />
+                  <Route path="discovery" element={<AiRadar />} />
+                  <Route path="history" element={<RecentIntelligence />} />
+                  <Route path="backtest" element={<ShadowLab />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="*" element={<Navigate to="/analyze" replace />} />
+                </Route>
+              </Routes>
+            </TourProvider>
           </BrowserRouter>
           <CookieConsent />
         </AdProvider>

@@ -29,7 +29,7 @@ export default function LinkedSharesStrip({ ev, loading }) {
             <span className="text-xs text-cyan-300">Discovery running…</span>
           </div>
           <p className="text-xs text-slate-500 italic mt-0.5">
-            This agent can take a few minutes to map linked shares. Results are cached weekly and also appear in Discovery.
+            Mapping the shares linked to this stock. This can take a few minutes, and findings will also appear in Discovery.
           </p>
         </div>
       </div>

@@ -16,12 +16,6 @@ export default function LinkedSharesModal({ ev, linkedShares, onClose }) {
   }, [onClose]);
 
   const report = ev?.discovery_report ?? {};
-  const cache = report?._cache;
-  const validUntil = cache?.valid_until
-    ? new Date(cache.valid_until).toLocaleString(undefined, {
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-      })
-    : null;
 
   return (
     <div
@@ -52,15 +46,9 @@ export default function LinkedSharesModal({ ev, linkedShares, onClose }) {
               Discovery Agent
             </p>
             <p className="text-xs text-slate-400 leading-relaxed">
-              These are second-order shares the agent linked to the primary ticker through supply-chain,
-              infrastructure, demand, or regulatory relationships. They are cached until the next Monday
-              pre-market refresh.
+              These are second-order shares the agent linked to the primary stock through supply-chain,
+              infrastructure, demand, or regulatory relationships.
             </p>
-            {validUntil && (
-              <p className="text-xs text-slate-600 mt-2">
-                Cache {cache?.status ?? 'ready'} · refreshes after {validUntil}
-              </p>
-            )}
           </div>
 
           {report?.analyst_note && (
