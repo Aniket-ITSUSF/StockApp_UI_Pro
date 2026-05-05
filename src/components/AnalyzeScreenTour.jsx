@@ -187,7 +187,9 @@ export default function AnalyzeScreenTour({ active, onClose }) {
   useEffect(() => {
     if (!active) return;
     const target = findTarget(step.target);
-    target?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    if (!target) return;
+    const mobile = window.innerWidth < 768;
+    target.scrollIntoView({ block: mobile ? 'start' : 'center', inline: 'nearest', behavior: 'smooth' });
     const t = setTimeout(() => setTick((n) => n + 1), 360);
     return () => clearTimeout(t);
   }, [active, step.target]);
@@ -222,24 +224,26 @@ export default function AnalyzeScreenTour({ active, onClose }) {
 
   const cardStyle = useMemo(() => {
     const width = isMobile ? Math.min(viewport.w - 16, 400) : 430;
-    const maxHeight = Math.max(320, viewport.h - 32);
-    if (!rect) return { position: 'fixed', top: '50%', left: '50%', width, maxHeight, transform: 'translate(-50%, -50%)' };
+    const desktopMaxHeight = Math.max(320, viewport.h - 32);
 
     if (isMobile) {
-      const topHalf = rect.top > viewport.h / 2;
-      const left = Math.min(viewport.w - width - 8, Math.max(8, rect.left + rect.width / 2 - width / 2));
-      if (topHalf) {
-        return { position: 'fixed', left, bottom: viewport.h - rect.top + 12, width, maxHeight: Math.max(280, rect.top - 24) };
-      }
-      return { position: 'fixed', left, top: rect.top + rect.height + 12, width, maxHeight: Math.max(280, viewport.h - rect.bottom - 24) };
+      // Pin the tour card as a bottom sheet so it stays on-screen even when the
+      // spotlighted block (e.g. the full result card) is taller than the viewport.
+      const cardMaxHeight = Math.min(Math.round(viewport.h * 0.55), 460);
+      const left = Math.max(8, Math.min(viewport.w - width - 8, viewport.w / 2 - width / 2));
+      return { position: 'fixed', left, bottom: 12, width, maxHeight: cardMaxHeight };
+    }
+
+    if (!rect) {
+      return { position: 'fixed', top: '50%', left: '50%', width, maxHeight: desktopMaxHeight, transform: 'translate(-50%, -50%)' };
     }
 
     const left = rect.left + rect.width + width + 16 < viewport.w
       ? rect.left + rect.width + 16
       : Math.max(16, rect.left - width - 16);
     let top = rect.top;
-    if (top + maxHeight > viewport.h - 16) top = 16;
-    return { position: 'fixed', left, top, width, maxHeight };
+    if (top + desktopMaxHeight > viewport.h - 16) top = 16;
+    return { position: 'fixed', left, top, width, maxHeight: desktopMaxHeight };
   }, [isMobile, rect, viewport.h, viewport.w]);
 
   if (!active) return null;
