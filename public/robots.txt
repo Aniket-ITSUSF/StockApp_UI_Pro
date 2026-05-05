@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /holdings
+Disallow: /holdings/
+Disallow: /history
+Disallow: /history/
+Disallow: /backtest
+Disallow: /backtest/
+
+Sitemap: https://equiquant.in/sitemap.xml

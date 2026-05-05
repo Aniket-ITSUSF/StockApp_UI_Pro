@@ -1,6 +1,6 @@
 import { Settings as SettingsIcon, Info, Wifi, WifiOff, RefreshCw, Compass } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
-import { useTour } from '../components/Tour';
+import { useTour } from '../components/tourContext';
 
 const CONFIG_ROWS = [
   { label: 'Consensus Threshold',  value: '65%' },

@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import AiRadar from './pages/AiRadar';
 import PreMarket from './pages/PreMarket';
 import RecentIntelligence from './pages/RecentIntelligence';
+import About from './pages/About';
 import { BackendProvider } from './context/BackendContext';
 import { AdProvider } from './components/ads/AdProvider';
 import CookieConsent from './components/CookieConsent';
@@ -57,6 +58,7 @@ export default function App() {
                   <Route path="discovery" element={<AiRadar />} />
                   <Route path="history" element={<RecentIntelligence />} />
                   <Route path="backtest" element={<ShadowLab />} />
+                  <Route path="about" element={<About />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/analyze" replace />} />
                 </Route>

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Clock, Globe, Sparkles } from 'lucide-react';
+import { Home, Briefcase, FlaskConical, Settings, RefreshCw, WifiOff, Radar, Clock, Globe, Sparkles, Info } from 'lucide-react';
 import { useBackend } from '../context/BackendContext';
 import AdSidebar from './ads/AdSidebar';
 
@@ -11,6 +11,7 @@ const NAV = [
   { to: '/discovery', label: 'Discovery',       icon: Radar,        tour: 'discovery' },
   { to: '/history',   label: 'History',         icon: Clock,        tour: 'history'   },
   { to: '/backtest',  label: 'Backtest',        icon: FlaskConical, tour: 'backtest'  },
+  { to: '/about',     label: 'About',           icon: Info,         tour: 'about'     },
   { to: '/settings',  label: 'Settings',        icon: Settings,     tour: 'settings'  },
 ];
 

@@ -1,11 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Activity, TrendingUp, Radar, FlaskConical, Clock, Briefcase,
-  Settings as SettingsIcon, X, ChevronLeft, ChevronRight, Check,
+  Settings as SettingsIcon, X, ChevronLeft, ChevronRight, Check, Info,
 } from 'lucide-react';
+import { useAdContext } from './ads/adContext';
+import { TourContext } from './tourContext';
 
-const STORAGE_KEY = 'equiquant_tour_completed_v1';
+const STORAGE_KEY = 'equiquant_tour_completed_v1_1';
 
 // Each feature step targets a nav button by its data-tour-nav value.
 // Items not present in MOBILE_NAV_ROUTES (set in Sidebar.jsx) get filtered
@@ -15,72 +17,140 @@ const STEPS = [
     id: 'welcome',
     icon: Sparkles,
     accent: 'emerald',
-    title: 'Welcome to EquiQuant',
-    body: "Quick 30 second tour. Each step points to a button in the menu and tells you what that page does.",
+    label: 'Start here',
+    title: 'Welcome to your AI quant research desk',
+    body: 'EquiQuant turns market math, AI research, catalysts, and risk checks into a simple workflow. This short tour shows you where to start and what each section is for.',
+    bullets: [
+      'Begin with Analyze when you want to research a ticker.',
+      'Use Home to review your dashboard and recent activity.',
+      'Treat every signal as research support, not financial advice.',
+    ],
   },
   {
     id: 'analyze',
     nav: 'analyze',
     icon: Sparkles,
     accent: 'emerald',
-    title: 'Analyze',
-    body: 'Search any stock and get an instant AI evaluation. Buy, hold, or sell, with the reasoning behind every call. We run mathematical strategies and AI checks on the stock to back the recommendation.',
+    label: 'Step 1',
+    title: 'Analyze a stock',
+    body: 'Search a ticker to run the math agents and AI research agents together. You get a structured signal, score, agent votes, reasoning, and risk context in one place.',
+    bullets: [
+      'Enter a symbol like AAPL, TSLA, INFY.NS, or RELIANCE.NS.',
+      'Read the alpha score, votes, catalyst summary, and risk notes.',
+      'Buy, hold, and sell labels are mathematical outputs, not advice.',
+    ],
   },
   {
     id: 'home',
     nav: 'home',
     icon: Activity,
     accent: 'emerald',
-    title: 'Home (Command Center)',
-    body: "Your dashboard. Portfolio overview, the AI's daily Hot Trades, and a feed of your recent activity, all in one place.",
+    label: 'Command center',
+    title: 'Review everything from Home',
+    body: 'Home is the control room for your research workflow. It brings together portfolio snapshots, AI-surfaced opportunities, hot trades, and recent intelligence.',
+    bullets: [
+      'Check your local paper portfolio overview.',
+      'Jump back into recent evaluations quickly.',
+      'Use Hot Trades and Discovery as idea starters.',
+    ],
   },
   {
     id: 'holdings',
     nav: 'holdings',
     icon: Briefcase,
     accent: 'amber',
-    title: 'Holdings',
-    body: 'When the Analyze screen suggests a buy, this page assumes you bought the stock at that price and shows how much you would have earned.',
+    label: 'Paper tracking',
+    title: 'Track watchlist holdings privately',
+    body: 'Holdings helps you follow paper positions and understand how ideas perform after you evaluate them. It is designed for learning and tracking, not live brokerage execution.',
+    bullets: [
+      'Positions stay in this browser.',
+      'Use it to monitor hypothetical performance.',
+      'Clear browser data can remove saved holdings.',
+    ],
   },
   {
     id: 'today',
     nav: 'today',
     icon: TrendingUp,
     accent: 'rose',
-    title: "Intraday's Play",
-    body: 'AI reads through news since the last market close and picks stocks with a high probability of moving or swinging. Runs automatically every day before the market opens.',
+    label: 'Pre-market radar',
+    title: "Find today's market movers",
+    body: "Intraday's Play scans fresh catalysts before the session and highlights stocks that may move because of news, earnings, guidance, macro events, or unusual sentiment.",
+    bullets: [
+      'Switch between US and India sessions where available.',
+      'Look at catalyst, direction, confidence, and key risk.',
+      'Use it to focus research before markets get noisy.',
+    ],
   },
   {
     id: 'discovery',
     nav: 'discovery',
     icon: Radar,
     accent: 'purple',
-    title: 'Discovery',
-    body: 'AI researches patterns and dependent shares that move along with the stocks you search, so you find the second order ideas you would have missed and improve your chances of earning.',
+    label: 'Opportunity map',
+    title: 'Discover second-order ideas',
+    body: 'Discovery looks for related companies, dependent shares, sector links, and follow-on opportunities connected to the tickers you research.',
+    bullets: [
+      'Find suppliers, competitors, beneficiaries, and sympathy movers.',
+      'Use conviction and reasoning to decide what to inspect next.',
+      'Evaluate discovered tickers before acting on them.',
+    ],
   },
   {
     id: 'history',
     nav: 'history',
     icon: Clock,
     accent: 'sky',
-    title: 'History',
-    body: 'Every stock you have analyzed, kept locally in this browser so you can revisit a past evaluation in one click.',
+    label: 'Research memory',
+    title: 'Revisit your past analysis',
+    body: 'History keeps your recent evaluations available locally, so you can compare signals over time and return to tickers you already researched.',
+    bullets: [
+      'Review previous scores and decisions.',
+      'Re-open a ticker when conditions change.',
+      'Your history is browser-local for privacy.',
+    ],
   },
   {
     id: 'backtest',
     nav: 'backtest',
     icon: FlaskConical,
     accent: 'sky',
-    title: 'Backtest',
-    body: 'Test any strategy on past market data before risking real capital. See how it would have performed historically.',
+    label: 'Strategy lab',
+    title: 'Test ideas before trusting them',
+    body: 'Backtest lets you pressure-test a strategy against historical behavior so you can understand how an idea may have performed before risking capital.',
+    bullets: [
+      'Use past data to challenge your assumptions.',
+      'Compare wins, losses, and rejected trades.',
+      'Remember that past performance never guarantees future results.',
+    ],
+  },
+  {
+    id: 'about',
+    nav: 'about',
+    icon: Info,
+    accent: 'emerald',
+    label: 'Our mission',
+    title: 'Understand what EquiQuant stands for',
+    body: 'About explains our mission: bringing quant-firm-style research tools to everyday investors while making the limitations and risk clear.',
+    bullets: [
+      'Learn how math agents and AI agents work together.',
+      'Read the mission, vision, and risk disclaimer.',
+      'Share this page with users who want to know what we do.',
+    ],
   },
   {
     id: 'settings',
     nav: 'settings',
     icon: SettingsIcon,
     accent: 'slate',
-    title: 'Settings',
-    body: "Tune the AI committee, see system status, and replay this tour anytime.",
+    label: 'Control panel',
+    title: 'Adjust settings and replay the tour',
+    body: 'Settings shows system status, runtime configuration, agent committee details, and the replay button if you want to see this walkthrough again.',
+    bullets: [
+      'Check whether the backend is connected.',
+      'Review how the agent committee is configured.',
+      'Replay this product tour anytime.',
+    ],
     final: true,
   },
 ];
@@ -96,20 +166,9 @@ const ACCENT_CLASSES = {
 
 const MOBILE_BREAKPOINT = 768;
 
-const TourContext = createContext(null);
-
-export function useTour() {
-  return useContext(TourContext);
-}
-
-export function isTourCompleted() {
+function isTourCompleted() {
   if (typeof window === 'undefined') return true;
   try { return window.localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return true; }
-}
-
-export function clearTourCompleted() {
-  if (typeof window === 'undefined') return;
-  try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
 }
 
 function useViewport() {
@@ -172,15 +231,17 @@ function useTargetRect(navKey, tickKey) {
 }
 
 export function TourProvider({ children }) {
+  const { consentChosen } = useAdContext();
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
   // Auto-start once per device.
   useEffect(() => {
+    if (!consentChosen) return;
     if (isTourCompleted()) return;
-    const t = setTimeout(() => setActive(true), 700);
+    const t = setTimeout(() => setActive(true), 600);
     return () => clearTimeout(t);
-  }, []);
+  }, [consentChosen]);
 
   const start = useCallback(() => {
     setStepIndex(0);
@@ -218,7 +279,7 @@ function TourOverlay() {
       // Probe the DOM. Mobile nav items only exist when md:hidden is active.
       return findVisibleNavEl(s.nav) !== null;
     });
-  }, [isMobile, viewport.w, viewport.h]);
+  }, [isMobile]);
 
   // Clamp index when the visible set shrinks (e.g. after rotating to mobile).
   useEffect(() => {
@@ -283,11 +344,11 @@ function TourOverlay() {
   // Card position. On desktop we anchor next to the spotlight (right of the
   // sidebar item). On mobile we anchor above the bottom nav, near the icon.
   const cardStyle = useMemo(() => {
+    const cardW = isMobile ? Math.min(viewport.w - 16, 400) : 430;
     if (!rect) {
       // No target. Center the card.
-      return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+      return { position: 'fixed', top: '50%', left: '50%', width: cardW, transform: 'translate(-50%, -50%)' };
     }
-    const cardW = isMobile ? Math.min(viewport.w - 16, 380) : 360;
     if (isMobile) {
       // Place card just above the highlighted icon. Bottom nav sits at very
       // bottom of screen, icon top is ~viewport.h - navHeight + iconY.
@@ -307,7 +368,7 @@ function TourOverlay() {
     // Desktop: card to the right of the sidebar item.
     const gap = 16;
     let top = rect.top;
-    const cardHGuess = 240;
+    const cardHGuess = 360;
     if (top + cardHGuess > viewport.h - 16) top = Math.max(16, viewport.h - cardHGuess - 16);
     const left = Math.min(viewport.w - cardW - 16, rect.left + rect.width + gap);
     return {
@@ -347,7 +408,7 @@ function TourOverlay() {
 
       {/* Tour card */}
       <div style={cardStyle}>
-        <div className="relative rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-700/80 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl shadow-black/50">
           {/* Optional left-side arrow toward the highlighted nav item (desktop). */}
           {arrow && (
             <span
@@ -358,18 +419,23 @@ function TourOverlay() {
           )}
 
           {/* Header: progress dots + close */}
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-            <div className="flex items-center gap-1.5" aria-label={`Step ${safeIndex + 1} of ${totalDots}`}>
-              {visibleSteps.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === safeIndex ? 'w-6 bg-emerald-400'
-                    : i < safeIndex ? 'w-1.5 bg-emerald-500/60'
-                    : 'w-1.5 bg-slate-700'
-                  }`}
-                />
-              ))}
+          <div className="flex items-start justify-between gap-3 px-5 pb-2 pt-4">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                Product tour · {safeIndex + 1}/{totalDots}
+              </p>
+              <div className="mt-2 flex items-center gap-1.5" aria-label={`Step ${safeIndex + 1} of ${totalDots}`}>
+                {visibleSteps.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === safeIndex ? 'w-8 bg-emerald-400'
+                      : i < safeIndex ? 'w-3 bg-emerald-500/60'
+                      : 'w-3 bg-slate-700'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
             <button
               type="button"
@@ -382,18 +448,37 @@ function TourOverlay() {
           </div>
 
           {/* Body */}
-          <div className="px-5 pb-4 pt-1 flex flex-col gap-3">
-            <div className={`w-11 h-11 rounded-xl border flex items-center justify-center ${accent.iconBg}`}>
-              <Icon size={20} className={accent.iconColor} />
+          <div className="flex flex-col gap-4 px-5 pb-5 pt-2">
+            <div className="flex items-start gap-3">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${accent.iconBg}`}>
+                <Icon size={22} className={accent.iconColor} />
+              </div>
+              <div className="min-w-0">
+                {step.label && (
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${accent.iconBg} ${accent.iconColor}`}>
+                    {step.label}
+                  </span>
+                )}
+                <h2 className="mt-2 text-xl font-black leading-tight tracking-tight text-slate-100">{step.title}</h2>
+              </div>
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100 leading-tight">{step.title}</h2>
-              <p className="text-sm text-slate-400 leading-relaxed mt-1.5">{step.body}</p>
+              <p className="text-sm leading-7 text-slate-400">{step.body}</p>
+              {step.bullets?.length > 0 && (
+                <div className="mt-4 flex flex-col gap-2">
+                  {step.bullets.map((bullet) => (
+                    <div key={bullet} className="flex gap-2.5 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2.5">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300" />
+                      <p className="text-xs leading-5 text-slate-300">{bullet}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 bg-slate-950/60 border-t border-slate-800 flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-950/70 px-4 py-3">
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -415,13 +500,13 @@ function TourOverlay() {
             <button
               type="button"
               onClick={goNext}
-              className={`inline-flex items-center gap-1 text-xs font-semibold rounded-lg px-3 py-1.5 transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
                 isLast
-                  ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                  ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400'
                   : 'bg-slate-200 hover:bg-white text-slate-950'
               }`}
             >
-              {isLast ? <>Got it <Check size={13} /></> : <>Next <ChevronRight size={13} /></>}
+              {isLast ? <>Start using EquiQuant <Check size={13} /></> : <>Next <ChevronRight size={13} /></>}
             </button>
           </div>
         </div>
