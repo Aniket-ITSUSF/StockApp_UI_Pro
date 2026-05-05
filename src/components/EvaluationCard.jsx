@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Activity, BarChart3, Brain, ChevronDown, ChevronUp, Loader2, ShieldCheck } from 'lucide-react';
 import CircularProgress from './CircularProgress';
 import AgentVoteGrid from './AgentVoteGrid';
 import Tooltip from './Tooltip';
@@ -296,6 +296,25 @@ function buildReasoning(ev) {
   return parts.length ? parts.join(' · ') : 'No additional context available.';
 }
 
+function ResultSection({ title, eyebrow, children, dataTour, Icon = Activity, className = '' }) {
+  return (
+    <section data-analyze-tour={dataTour} className={`rounded-xl border border-slate-800 bg-slate-950/45 p-3.5 ${className}`}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-emerald-300">
+            <Icon size={15} />
+          </span>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">{eyebrow}</p>
+            <h4 className="text-sm font-bold text-slate-100">{title}</h4>
+          </div>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function EvaluationCard({ evaluation: ev, sentimentLoading = false, discoveryLoading = false }) {
   const [open, setOpen] = useState(false);
   if (!ev) return null;
@@ -319,96 +338,115 @@ export default function EvaluationCard({ evaluation: ev, sentimentLoading = fals
   const currentPrice = ev.current_price ?? ev.entry_price ?? oracle?.current_price;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 hover:border-slate-700 transition-colors duration-150 min-w-0">
+    <div data-analyze-tour="result-card" className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-xl shadow-slate-950/20 transition-colors duration-150 hover:border-slate-700 min-w-0">
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 min-w-0">
-        <div className="flex flex-col gap-1.5 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-lg font-bold tracking-widest text-slate-100 font-mono">
-              {ev.ticker}
-            </span>
-            {currentPrice != null && (
-              <span className="cursor-default text-xs font-extrabold px-2.5 py-1 rounded-full border bg-emerald-500/15 text-emerald-200 border-emerald-400/30 shadow-[0_0_14px_-8px] shadow-emerald-300">
-                Current {fmtDisplayPrice(currentPrice, ev.ticker)}
+      <div className="border-b border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/20 p-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-2xl font-black tracking-widest text-slate-100">
+                {ev.ticker}
               </span>
-            )}
-            <Tooltip content={badge.tip} width={224} position="bottom">
-              <span className={`cursor-default text-xs font-semibold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${badge.cls}`}>
-                {action === 'ANALYZING' && <Loader2 size={10} className="animate-spin" />}
-                {badge.text}
-              </span>
-            </Tooltip>
+              {currentPrice != null && (
+                <span className="cursor-default rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-extrabold text-emerald-200 shadow-[0_0_14px_-8px] shadow-emerald-300">
+                  Current {fmtDisplayPrice(currentPrice, ev.ticker)}
+                </span>
+              )}
+              <Tooltip content={badge.tip} width={224} position="bottom">
+                <span data-analyze-tour="verdict" className={`inline-flex cursor-default items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${badge.cls}`}>
+                  {action === 'ANALYZING' && <Loader2 size={10} className="animate-spin" />}
+                  {badge.text}
+                </span>
+              </Tooltip>
+            </div>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              Read this card from top to bottom: verdict, alpha score, market context, math agents, then reasoning.
+            </p>
+            {ts && <span className="mt-2 block text-xs text-slate-500">{ts}</span>}
           </div>
-          {ts && <span className="text-xs text-slate-500">{ts}</span>}
-        </div>
 
-        {/* Alpha score with tooltip */}
-        <Tooltip content={ALPHA_TIP} width={240} align="right">
-          <div className="flex flex-col items-center shrink-0 cursor-default">
-            <CircularProgress score={alpha} size={68} />
-            <span className="text-xs text-slate-500 mt-1 font-medium">ALPHA</span>
-            {ev.cognitive_bonus != null && ev.cognitive_bonus !== 0 && (
-              <span className={`text-xs font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {ev.cognitive_bonus > 0 ? '+' : ''}{ev.cognitive_bonus.toFixed(1)} AI
-              </span>
-            )}
-          </div>
-        </Tooltip>
+          <Tooltip content={ALPHA_TIP} width={240} align="right">
+            <div data-analyze-tour="alpha" className="flex shrink-0 items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 cursor-default sm:flex-col sm:gap-1">
+              <CircularProgress score={alpha} size={72} />
+              <div className="sm:text-center">
+                <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Alpha</span>
+                {ev.cognitive_bonus != null && ev.cognitive_bonus !== 0 && (
+                  <span className={`block text-xs font-bold font-mono mt-0.5 ${ev.cognitive_bonus > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {ev.cognitive_bonus > 0 ? '+' : ''}{ev.cognitive_bonus.toFixed(1)} AI
+                  </span>
+                )}
+              </div>
+            </div>
+          </Tooltip>
+        </div>
       </div>
 
-      {/* Context badges */}
-      {(ev.regime || ev.vix_level != null) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {ev.regime && (
-            <Tooltip content={regimeTip} width={240} position="bottom">
-              <span className="cursor-default text-xs bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full">
-                {ev.regime}
-              </span>
-            </Tooltip>
-          )}
-          {ev.vix_level != null && (
-            <Tooltip content={VIX_TIP} width={240} position="bottom">
-              <span className={`cursor-default text-xs font-medium px-2 py-0.5 rounded-full border ${
-                ev.vix_level > 20
-                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-              }`}>
-                VIX {ev.vix_level.toFixed(1)}
-              </span>
-            </Tooltip>
-          )}
+      <div className="flex flex-col gap-3 p-4">
+        {(ev.regime || ev.vix_level != null) && (
+          <ResultSection title="Market regime and volatility" eyebrow="Risk context" dataTour="market-context" Icon={ShieldCheck}>
+            <div className="flex flex-wrap items-center gap-2">
+              {ev.regime && (
+                <Tooltip content={regimeTip} width={240} position="bottom">
+                  <span className="cursor-default rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+                    {ev.regime}
+                  </span>
+                </Tooltip>
+              )}
+              {ev.vix_level != null && (
+                <Tooltip content={VIX_TIP} width={240} position="bottom">
+                  <span className={`cursor-default rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    ev.vix_level > 20
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  }`}>
+                    VIX {ev.vix_level.toFixed(1)}
+                  </span>
+                </Tooltip>
+              )}
+            </div>
+          </ResultSection>
+        )}
+
+        <div data-analyze-tour="volume-options" className="grid grid-cols-1 gap-3">
+          <OracleCones oracle={oracle} />
+          <VolumeAnalysisStrip profile={ev.volume_profile} ticker={ev.ticker} />
         </div>
-      )}
 
-      {/* Options oracle prediction cones */}
-      <OracleCones oracle={oracle} />
+        <ResultSection title="AI research context" eyebrow="News and discovery" dataTour="ai-research" Icon={Brain}>
+          <div className="flex flex-col gap-2">
+            <SentimentStrip ev={ev} loading={sentimentLoading} />
+            <LinkedSharesStrip ev={ev} loading={discoveryLoading} />
+            {!sentimentLoading && !discoveryLoading && !ev?.cognitive_signal && !ev?.discovery_report && (
+              <p className="text-xs leading-5 text-slate-500">
+                AI sentiment and linked-share research appear here when available.
+              </p>
+            )}
+          </div>
+        </ResultSection>
 
-      {/* Volume analysis (plain English) */}
-      <VolumeAnalysisStrip profile={ev.volume_profile} ticker={ev.ticker} />
+        <ResultSection title="Math agents" eyebrow="Separate calculations" dataTour="math-agents" Icon={BarChart3}>
+          <p className="mb-3 text-xs leading-5 text-slate-500">
+            Each chip is a separate mathematical agent running its own calculation, then voting on the setup.
+          </p>
+          <AgentVoteGrid evaluation={ev} />
+        </ResultSection>
 
-      {/* Sentiment strip */}
-      <SentimentStrip ev={ev} loading={sentimentLoading} />
-
-      {/* Linked shares strip */}
-      <LinkedSharesStrip ev={ev} loading={discoveryLoading} />
-
-      {/* Agent voting grid */}
-      <AgentVoteGrid evaluation={ev} />
-
-      {/* Expandable reasoning */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors w-fit"
-      >
-        {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        Reasoning
-      </button>
-      {open && (
-        <div className="bg-slate-950 rounded-lg px-3 py-2.5 text-xs text-slate-400 leading-relaxed border border-slate-800">
-          {reasoning}
-        </div>
-      )}
+        <ResultSection title="Decision reasoning" eyebrow="Why it scored this way" dataTour="reasoning" Icon={Activity}>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors w-fit"
+          >
+            {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            {open ? 'Hide reasoning' : 'Show reasoning'}
+          </button>
+          {open && (
+            <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs leading-relaxed text-slate-400">
+              {reasoning}
+            </div>
+          )}
+        </ResultSection>
+      </div>
     </div>
   );
 }

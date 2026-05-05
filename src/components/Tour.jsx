@@ -7,7 +7,7 @@ import {
 import { useAdContext } from './ads/adContext';
 import { TourContext } from './tourContext';
 
-const STORAGE_KEY = 'equiquant_tour_completed_v1_1';
+const STORAGE_KEY = 'equiquant_tour_completed_v1_2';
 
 // Each feature step targets a nav button by its data-tour-nav value.
 // Items not present in MOBILE_NAV_ROUTES (set in Sidebar.jsx) get filtered
@@ -345,9 +345,10 @@ function TourOverlay() {
   // sidebar item). On mobile we anchor above the bottom nav, near the icon.
   const cardStyle = useMemo(() => {
     const cardW = isMobile ? Math.min(viewport.w - 16, 400) : 430;
+    const maxHeight = Math.max(360, viewport.h - 32);
     if (!rect) {
       // No target. Center the card.
-      return { position: 'fixed', top: '50%', left: '50%', width: cardW, transform: 'translate(-50%, -50%)' };
+      return { position: 'fixed', top: '50%', left: '50%', width: cardW, maxHeight, transform: 'translate(-50%, -50%)' };
     }
     if (isMobile) {
       // Place card just above the highlighted icon. Bottom nav sits at very
@@ -363,19 +364,20 @@ function TourOverlay() {
         bottom: desiredBottom,
         left,
         width: cardW,
+        maxHeight: Math.max(280, rect.top - 24),
       };
     }
     // Desktop: card to the right of the sidebar item.
     const gap = 16;
     let top = rect.top;
-    const cardHGuess = 360;
-    if (top + cardHGuess > viewport.h - 16) top = Math.max(16, viewport.h - cardHGuess - 16);
+    if (top + maxHeight > viewport.h - 16) top = 16;
     const left = Math.min(viewport.w - cardW - 16, rect.left + rect.width + gap);
     return {
       position: 'fixed',
       top,
       left,
       width: cardW,
+      maxHeight,
     };
   }, [rect, isMobile, viewport.w, viewport.h]);
 
@@ -408,7 +410,7 @@ function TourOverlay() {
 
       {/* Tour card */}
       <div style={cardStyle}>
-        <div className="relative overflow-hidden rounded-3xl border border-slate-700/80 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl shadow-black/50">
+        <div className="relative flex max-h-[inherit] flex-col overflow-hidden rounded-3xl border border-slate-700/80 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl shadow-black/50">
           {/* Optional left-side arrow toward the highlighted nav item (desktop). */}
           {arrow && (
             <span
@@ -448,7 +450,7 @@ function TourOverlay() {
           </div>
 
           {/* Body */}
-          <div className="flex flex-col gap-4 px-5 pb-5 pt-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pb-5 pt-2">
             <div className="flex items-start gap-3">
               <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${accent.iconBg}`}>
                 <Icon size={22} className={accent.iconColor} />
@@ -478,7 +480,7 @@ function TourOverlay() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-950/70 px-4 py-3">
+          <div className="shrink-0 flex items-center justify-between gap-2 border-t border-slate-800 bg-slate-950/70 px-4 py-3">
             <div className="flex items-center gap-1">
               <button
                 type="button"

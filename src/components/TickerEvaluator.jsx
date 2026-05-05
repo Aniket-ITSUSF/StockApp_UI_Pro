@@ -6,6 +6,8 @@ import {
   evaluateTickerSentiment,
 } from '../services/api';
 import EvaluationCard from './EvaluationCard';
+import AnalyzeScreenTour from './AnalyzeScreenTour';
+import { shouldShowAnalyzeScreenTour } from '../utils/analyzeScreenTourState';
 
 const QUICK_TICKERS = {
   US:  ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN'],
@@ -77,7 +79,9 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
   const [discoveryError, setDiscoveryError] = useState(null);
   const [result, setResult]           = useState(null);
   const [error, setError]             = useState(null);
+  const [analyzeTourActive, setAnalyzeTourActive] = useState(false);
   const inputRef = useRef(null);
+  const analyzeTourTriggeredRef = useRef(false);
 
   // Emit active = (loading OR result present) so parents can adjust layout (e.g. ad slots)
   useEffect(() => {
@@ -206,17 +210,32 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
     }
   };
 
+  useEffect(() => {
+    if (!result || analyzeTourTriggeredRef.current) return;
+    if (!shouldShowAnalyzeScreenTour()) return;
+    analyzeTourTriggeredRef.current = true;
+    const timer = setTimeout(() => setAnalyzeTourActive(true), 500);
+    return () => clearTimeout(timer);
+  }, [result]);
+
   const quickTickers = QUICK_TICKERS[market] ?? QUICK_TICKERS.US;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col gap-3 h-full">
-      <div className="flex items-center gap-2">
-        <Zap size={14} className="text-emerald-400" />
-        <h3 className="text-sm font-semibold text-slate-100">Live Evaluation</h3>
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5 flex flex-col gap-4 h-full shadow-xl shadow-slate-950/20">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
+            <Zap size={15} className="text-emerald-400" />
+          </span>
+          <div>
+            <h3 className="text-sm font-bold text-slate-100">Live Evaluation</h3>
+            <p className="text-xs leading-5 text-slate-500">Choose a market, enter a ticker, and run the quant committee.</p>
+          </div>
+        </div>
       </div>
 
       {/* Input row */}
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         {/* Market dropdown */}
         <div className="relative shrink-0">
           <select
@@ -247,7 +266,7 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
         <button
           onClick={() => run()}
           disabled={loading || sentimentLoading || discoveryLoading || !ticker.trim()}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 border border-emerald-500/30 text-emerald-400 text-sm font-medium rounded-lg transition-colors shrink-0"
+          className="flex min-h-[42px] items-center justify-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 border border-emerald-500/30 text-emerald-400 text-sm font-semibold rounded-lg transition-colors shrink-0"
         >
           {loading
             ? <Loader2 size={14} className="animate-spin" />
@@ -307,6 +326,7 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
         <button
           type="button"
           onClick={fetchDiscovery}
+          data-analyze-tour="related-trades"
           className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 active:bg-cyan-500/25 text-cyan-200 text-sm font-semibold transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
           aria-label={`Find related trades for ${result.ticker}`}
         >
@@ -348,6 +368,10 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
           </div>
         </div>
       )}
+      <AnalyzeScreenTour
+        active={analyzeTourActive}
+        onClose={() => setAnalyzeTourActive(false)}
+      />
     </div>
   );
 }
