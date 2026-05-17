@@ -1,6 +1,15 @@
 import { Fragment, useEffect } from 'react';
-import { AlertCircle, Clock, GitBranch, X } from 'lucide-react';
+import { AlertCircle, Clock, GitBranch, X, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import AdInFeed from './ads/AdInFeed';
+import {
+  getArchetypeMeta,
+  moveChipCls,
+  formatMovePct,
+  exposureChipCls,
+  formatExposurePct,
+  getLiquidityMeta,
+  formatEvidenceDate,
+} from '../utils/discoveryMeta';
 
 const CONVICTION_META = {
   HIGH:   'text-emerald-400 bg-emerald-500/10 border-emerald-500/25',
@@ -69,6 +78,12 @@ export default function LinkedSharesModal({ ev, linkedShares, onClose }) {
           ) : (
             linkedShares.map((share, index) => {
               const convictionCls = CONVICTION_META[share.conviction] ?? CONVICTION_META.LOW;
+              const archetype = getArchetypeMeta(share.archetype);
+              const liquidity = getLiquidityMeta(share.avg_daily_dollar_volume_bucket);
+              const moveLabel = formatMovePct(share.pct_move_60d);
+              const exposureLabel = formatExposurePct(share.revenue_exposure_pct);
+              const evidenceDate = formatEvidenceDate(share.evidence_date);
+              const hasMetricsRow = moveLabel != null || exposureLabel != null || liquidity != null;
               return (
                 <Fragment key={`${share.ticker}-${index}`}>
                   {index > 0 && index % 2 === 0 && (
@@ -91,6 +106,11 @@ export default function LinkedSharesModal({ ev, linkedShares, onClose }) {
                               {share.market}
                             </span>
                           )}
+                          {archetype && (
+                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${archetype.cls}`}>
+                              {archetype.label}
+                            </span>
+                          )}
                         </div>
                         {share.company_name && (
                           <p className="text-xs text-slate-500 mt-0.5">{share.company_name}</p>
@@ -106,14 +126,42 @@ export default function LinkedSharesModal({ ev, linkedShares, onClose }) {
                       )}
                     </div>
 
+                    {hasMetricsRow && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {exposureLabel && (
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border ${exposureChipCls(share.revenue_exposure_pct)}`}>
+                            <BarChart3 size={10} />
+                            {exposureLabel}
+                          </span>
+                        )}
+                        {moveLabel && (
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border ${moveChipCls(share.pct_move_60d)}`}>
+                            <TrendingUp size={10} />
+                            60d {moveLabel}
+                          </span>
+                        )}
+                        {liquidity && (
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border ${liquidity.cls}`}>
+                            <Activity size={10} />
+                            {liquidity.label}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {share.causal_chain && (
                       <p className="text-xs text-slate-300 leading-relaxed">{share.causal_chain}</p>
                     )}
                     {share.revenue_exposure_evidence && (
                       <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
-                        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-1">
-                          Evidence
-                        </p>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                            Evidence
+                          </p>
+                          {evidenceDate && (
+                            <p className="text-xs text-slate-500">{evidenceDate}</p>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-400 leading-relaxed">
                           {share.revenue_exposure_evidence}
                         </p>

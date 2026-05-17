@@ -1,6 +1,15 @@
 import { useState } from 'react';
-import { Zap, Clock, AlertCircle, ArrowRight } from 'lucide-react';
+import { Zap, Clock, AlertCircle, ArrowRight, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import Tooltip from './Tooltip';
+import {
+  getArchetypeMeta,
+  moveChipCls,
+  formatMovePct,
+  exposureChipCls,
+  formatExposurePct,
+  getLiquidityMeta,
+  formatEvidenceDate,
+} from '../utils/discoveryMeta';
 
 const CONVICTION_META = {
   HIGH:   { cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25', dot: 'bg-emerald-400' },
@@ -19,6 +28,13 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
   const [expanded, setExpanded] = useState(false);
   const conviction = CONVICTION_META[disc.conviction] ?? CONVICTION_META.LOW;
   const market     = MARKET_BADGE[disc.market]     ?? MARKET_BADGE.Other;
+  const archetype  = getArchetypeMeta(disc.archetype);
+  const liquidity  = getLiquidityMeta(disc.avg_daily_dollar_volume_bucket);
+  const movePct    = disc.pct_move_60d;
+  const moveLabel  = formatMovePct(movePct);
+  const exposureLabel = formatExposurePct(disc.revenue_exposure_pct);
+  const evidenceDate  = formatEvidenceDate(disc.evidence_date);
+  const hasMetricsRow = moveLabel != null || exposureLabel != null || liquidity != null;
 
   const ts = disc.evaluation_timestamp
     ? new Date(disc.evaluation_timestamp).toLocaleString(undefined, {
@@ -43,6 +59,17 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
             <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${market.cls}`}>
               {market.label}
             </span>
+            {archetype && (
+              <Tooltip
+                width={220}
+                align="left"
+                content="How this stock connects to the primary trend - whether it builds the infrastructure, supplies a key component, provides a service, or offers a lagging-market entry."
+              >
+                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border cursor-help ${archetype.cls}`}>
+                  {archetype.label}
+                </span>
+              </Tooltip>
+            )}
           </div>
           {disc.company_name && (
             <p className="text-xs text-slate-500 mt-0.5 truncate">{disc.company_name}</p>
@@ -74,6 +101,48 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
         {ts && <span className="text-slate-600">· {ts}</span>}
       </div>
 
+      {/* Metrics strip: revenue exposure, 60d move, liquidity */}
+      {hasMetricsRow && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {exposureLabel && (
+            <Tooltip
+              width={220}
+              align="left"
+              content="Share of the company's revenue tied to the primary trend, taken from its most recent filing or earnings call."
+            >
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border cursor-help ${exposureChipCls(disc.revenue_exposure_pct)}`}>
+                <BarChart3 size={10} />
+                {exposureLabel}
+              </span>
+            </Tooltip>
+          )}
+          {moveLabel && (
+            <Tooltip
+              width={220}
+              align="left"
+              content="Price change over the last 60 trading days. Lower or negative values mean the market has not yet repriced this idea."
+            >
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border cursor-help ${moveChipCls(movePct)}`}>
+                <TrendingUp size={10} />
+                60d {moveLabel}
+              </span>
+            </Tooltip>
+          )}
+          {liquidity && (
+            <Tooltip
+              width={220}
+              align="left"
+              content="Typical daily trading volume bucket. Higher is easier to enter and exit a position without moving the price."
+            >
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full border cursor-help ${liquidity.cls}`}>
+                <Activity size={10} />
+                {liquidity.label}
+              </span>
+            </Tooltip>
+          )}
+        </div>
+      )}
+
       {/* Causal chain */}
       {disc.causal_chain && (
         <div className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5">
@@ -92,7 +161,7 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
         </div>
       )}
 
-      {/* Crowd attention + risk caveat */}
+      {/* Crowd attention + evidence date */}
       <div className="flex items-center gap-2 flex-wrap">
         {disc.crowd_attention_level && (
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
@@ -103,6 +172,11 @@ export default function DiscoveryCard({ disc, onEvaluate }) {
               : 'text-rose-400 bg-rose-500/10 border-rose-500/20'
           }`}>
             {disc.crowd_attention_level} crowd attention
+          </span>
+        )}
+        {evidenceDate && (
+          <span className="text-xs text-slate-500">
+            Evidence dated {evidenceDate}
           </span>
         )}
       </div>
