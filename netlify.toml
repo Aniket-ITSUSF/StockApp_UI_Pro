@@ -3,6 +3,13 @@
   publish     = "dist"
   environment = { NODE_VERSION = "22" }
 
+# Domain redirect - Must be placed BEFORE the SPA fallback
+[[redirects]]
+  from   = "https://equiquant.netlify.app/*"
+  to     = "https://equiquant.in/:splat"
+  status = 301
+  force  = true
+
 # SPA fallback - serve index.html for all routes so refreshes don't 404
 [[redirects]]
   from   = "/*"
