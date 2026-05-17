@@ -15,15 +15,17 @@ const api = axios.create({
   timeout: 90000,
 });
 
+const tickerPath = (ticker) => encodeURIComponent(ticker.toUpperCase().trim());
+
 export const getHealth          = () => axios.get(HEALTH_URL, { timeout: 5000 });
 export const getPortfolioSummary    = ()  => api.get('/portfolio/summary');
 export const refreshPortfolioPrices = ()  => api.post('/portfolio/refresh');
-export const evaluateTicker      = (ticker)  => api.post(`/evaluate/${ticker.toUpperCase().trim()}`);
-export const evaluateTickerFast  = (ticker)  => api.post(`/evaluate/${ticker.toUpperCase().trim()}/fast`);
-export const evaluateTickerSentiment = (ticker) => api.post(`/evaluate/${ticker.toUpperCase().trim()}/sentiment`);
-export const evaluateTickerDiscovery = (ticker) => api.post(`/evaluate/${ticker.toUpperCase().trim()}/discovery`);
+export const evaluateTicker      = (ticker)  => api.post(`/evaluate/${tickerPath(ticker)}`);
+export const evaluateTickerFast  = (ticker)  => api.post(`/evaluate/${tickerPath(ticker)}/fast`);
+export const evaluateTickerSentiment = (ticker) => api.post(`/evaluate/${tickerPath(ticker)}/sentiment`);
+export const evaluateTickerDiscovery = (ticker) => api.post(`/evaluate/${tickerPath(ticker)}/discovery`);
 export const getRecentEvaluations = ()       => api.get('/evaluations/recent');
-export const getCurrentPrice     = (ticker)  => api.get(`/price/${ticker.toUpperCase().trim()}`);
+export const getCurrentPrice     = (ticker)  => api.get(`/price/${tickerPath(ticker)}`);
 export const getBatchPrices      = (tickers) => api.post('/prices/batch', { tickers });
 export const getShadowPositions    = ()                    => api.get('/shadow/positions');
 export const getRecentDiscoveries  = ()                    => api.get('/discoveries/recent');

@@ -19,6 +19,8 @@ const MARKETS = [
   { value: 'IND', label: 'IND', flag: '🇮🇳' },
 ];
 
+const SENTIMENT_SCORE_THRESHOLD = 60;
+
 function detectMarket() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
   if (tz.startsWith('Asia/Kolkata') || tz.startsWith('Asia/Calcutta')) return 'IND';
@@ -34,6 +36,27 @@ function deriveAction(d) {
   const threshold = d.required_threshold ?? 65;
   if (score >= threshold && d.mtf_status !== 'VETO') return 'BUY';
   return 'REJECTED_CONSENSUS';
+}
+
+function normalizeScore(rawScore) {
+  if (rawScore == null || rawScore === '') return null;
+  const numeric = Number(rawScore);
+  if (!Number.isFinite(numeric)) return null;
+  return numeric > 1 ? numeric : numeric * 100;
+}
+
+function getFastScore(d) {
+  return normalizeScore(
+    d.final_weighted_alpha_score ??
+    d.final_alpha_score ??
+    d.weighted_alpha_score ??
+    d.total_consensus_score,
+  );
+}
+
+function shouldRunSentiment(d) {
+  const score = getFastScore(d);
+  return score != null && score > SENTIMENT_SCORE_THRESHOLD && d.mtf_status !== 'VETO';
 }
 
 function mapVotes(d, sym) {
@@ -79,9 +102,12 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
   const [discoveryError, setDiscoveryError] = useState(null);
   const [result, setResult]           = useState(null);
   const [error, setError]             = useState(null);
+  const [sentimentError, setSentimentError] = useState(null);
   const [analyzeTourActive, setAnalyzeTourActive] = useState(false);
   const inputRef = useRef(null);
   const analyzeTourTriggeredRef = useRef(false);
+  const activeRequestIdRef = useRef(0);
+  const activeDiscoveryRequestIdRef = useRef(0);
 
   // Emit active = (loading OR result present) so parents can adjust layout (e.g. ad slots)
   useEffect(() => {
@@ -90,9 +116,16 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
 
   // Reset result/error when market changes
   useEffect(() => {
+    activeRequestIdRef.current += 1;
+    activeDiscoveryRequestIdRef.current += 1;
     setTicker('');
     setResult(null);
     setError(null);
+    setSentimentError(null);
+    setSentimentLoading(false);
+    setDiscoveryLoading(false);
+    setDiscoveryFetched(false);
+    setDiscoveryError(null);
   }, [market]);
 
   // Accept pre-filled ticker from Discovery Radar
@@ -123,20 +156,26 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
   const run = async (t) => {
     const sym = buildSym(t ?? ticker);
     if (!sym) return;
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    activeDiscoveryRequestIdRef.current += 1;
     setLoading(true);
     setSentimentLoading(false);
     setDiscoveryLoading(false);
     // New ticker — reset discovery opt-in so the button reappears.
     setDiscoveryFetched(false);
     setDiscoveryError(null);
+    setSentimentError(null);
     setError(null);
     setResult(null);
     latestResultRef.current = null;
     try {
       // Stage 1: math-only fast evaluation - show the card immediately.
       const fastRes = await evaluateTickerFast(sym);
+      if (requestId !== activeRequestIdRef.current) return;
       let latest = mapVotes(fastRes.data, sym);
       const mergeLatest = (patch) => {
+        if (requestId !== activeRequestIdRef.current) return latest;
         const next = mapVotes({ ...latest, ...patch, ticker: sym }, sym);
         latest = next;
         latestResultRef.current = next;
@@ -149,38 +188,65 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
       if (onNewEvaluation) onNewEvaluation(latest);
       setLoading(false);
 
-      // Stage 2: sentiment runs automatically (it's the cheap, ~1-second AI
-      // call and is critical to the headline action verdict). Discovery is
-      // NOT fired here — the user opts in via the dedicated button so we
-      // don't burn a 25-second web-search call on every analyze press.
+      // Stage 2: sentiment runs only for math setups strong enough to justify
+      // the extra AI/news call. Discovery is NOT fired here — the user opts in
+      // via the dedicated button so we don't burn a web-search call on every
+      // analyze press.
+      if (!shouldRunSentiment(latest)) {
+        const next = {
+          ...latest,
+          _ai: {
+            ...(latest._ai ?? {}),
+            sentiment_status: 'skipped_low_score',
+          },
+        };
+        latest = next;
+        latestResultRef.current = next;
+        setResult(next);
+        if (onNewEvaluation) onNewEvaluation(next);
+        return;
+      }
+
       setSentimentLoading(true);
+      setSentimentError(null);
 
       try {
         const res = await evaluateTickerSentiment(sym);
+        if (requestId !== activeRequestIdRef.current) return;
         const next = mergeLatest(res.data);
         if (onNewEvaluation) onNewEvaluation(next);
       } catch (err) {
-        setError(err.response?.data?.detail ?? err.message ?? 'Sentiment unavailable');
+        if (requestId !== activeRequestIdRef.current) return;
+        setSentimentError(err.response?.data?.detail ?? err.message ?? 'Sentiment unavailable');
       } finally {
-        setSentimentLoading(false);
+        if (requestId === activeRequestIdRef.current) setSentimentLoading(false);
       }
     } catch (err) {
+      if (requestId !== activeRequestIdRef.current) return;
       setError(err.response?.data?.detail ?? err.message ?? 'Evaluation failed');
       setResult(null);
     } finally {
-      setLoading(false);
-      setSentimentLoading(false);
+      if (requestId === activeRequestIdRef.current) {
+        setLoading(false);
+        setSentimentLoading(false);
+      }
     }
   };
 
   const fetchDiscovery = async () => {
     const current = latestResultRef.current;
     if (!current?.ticker || discoveryLoading) return;
+    const discoveryRequestId = activeDiscoveryRequestIdRef.current + 1;
+    activeDiscoveryRequestIdRef.current = discoveryRequestId;
     setDiscoveryLoading(true);
     setDiscoveryError(null);
     setDiscoveryFetched(true);
     try {
       const res = await evaluateTickerDiscovery(current.ticker);
+      if (
+        discoveryRequestId !== activeDiscoveryRequestIdRef.current ||
+        latestResultRef.current?.ticker !== current.ticker
+      ) return;
       const bestDiscovery =
         res.data?.best_discovery ??
         res.data?.best_discovery_opportunity ??
@@ -200,13 +266,14 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
       setResult(next);
       if (onNewEvaluation) onNewEvaluation(next);
     } catch (err) {
+      if (discoveryRequestId !== activeDiscoveryRequestIdRef.current) return;
       // Allow the user to retry — keep their primary evaluation visible.
       setDiscoveryFetched(false);
       setDiscoveryError(
         err.response?.data?.detail ?? err.message ?? 'Could not search related trades. Try again.',
       );
     } finally {
-      setDiscoveryLoading(false);
+      if (discoveryRequestId === activeDiscoveryRequestIdRef.current) setDiscoveryLoading(false);
     }
   };
 
@@ -265,13 +332,13 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
         />
         <button
           onClick={() => run()}
-          disabled={loading || sentimentLoading || discoveryLoading || !ticker.trim()}
+          disabled={loading || !ticker.trim()}
           className="flex min-h-[42px] items-center justify-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 border border-emerald-500/30 text-emerald-400 text-sm font-semibold rounded-lg transition-colors shrink-0"
         >
           {loading
             ? <Loader2 size={14} className="animate-spin" />
             : <Search size={14} />}
-          {(loading || sentimentLoading || discoveryLoading) ? 'Analyzing…' : 'Evaluate'}
+          {loading ? 'Analyzing…' : 'Evaluate'}
         </button>
       </div>
 
@@ -298,6 +365,13 @@ export default function TickerEvaluator({ onNewEvaluation, onActiveChange, prefi
         <div className="flex items-start gap-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
           <AlertCircle size={13} className="shrink-0 mt-0.5" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {sentimentError && result && (
+        <div className="flex items-start gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+          <AlertCircle size={13} className="shrink-0 mt-0.5" />
+          <span>{sentimentError}</span>
         </div>
       )}
 
